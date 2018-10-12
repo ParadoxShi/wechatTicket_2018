@@ -29,3 +29,18 @@ class UserBind(APIView):
         self.validate_user()
         user.student_id = self.input['student_id']
         user.save()
+
+class ActivityDetail(APIView):
+
+    def activity_realised(self):
+        if(activity.status == STATUS_PUBLISHED):
+            return
+        else:
+            raise NotImplementedError('The Activity has not published')
+            return
+
+    def get(self):
+        self.check_input('key')
+        activity = Activity.get_by_key(self.input['key'])
+        self.activity_realised()
+        return {'name':activity.name, 'key':activity.key}#and so on
