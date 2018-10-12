@@ -2,6 +2,7 @@ from codex.baseerror import *
 from codex.baseview import APIView
 
 from wechat.models import User
+from wechat.models import Activity
 
 
 class UserBind(APIView):
@@ -11,14 +12,12 @@ class UserBind(APIView):
         input: self.input['student_id'] and self.input['password']
         raise: ValidateError when validating failed
         """
-        if(User.get_by_openid(self.input['openid']).student_id == self.input['openid']
-            && User.get_by_openid(self.input['openid']).password == self.input['password'])
+        if(user.student_id == self.input['openid']
+            && user.password == self.input['password']):
             return
-        else
-        {
+        else:
             raise NotImplementedError('You should implement UserBind.validate_user method')
             return
-        }
 
     def get(self):
         self.check_input('openid')
