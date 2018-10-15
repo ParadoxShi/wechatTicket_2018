@@ -2,6 +2,10 @@ from codex.baseerror import *
 from codex.baseview import APIView
 
 from wechat.models import User
+from wechat.models import Activity
+from wechat.models import Ticket
+
+import datetime
 
 
 class UserBind(APIView):
@@ -11,7 +15,9 @@ class UserBind(APIView):
         input: self.input['student_id'] and self.input['password']
         raise: ValidateError when validating failed
         """
-        raise NotImplementedError('You should implement UserBind.validate_user method')
+        self.check_input('openid', 'password')
+        user = User.get_by_openid(self.input['openid'])
+        # 貌似暂时不需要实现这玩意了
 
     def get(self):
         self.check_input('openid')
@@ -23,3 +29,25 @@ class UserBind(APIView):
         self.validate_user()
         user.student_id = self.input['student_id']
         user.save()
+
+
+class ActivityView(APIView):
+    def get(self):
+        self.check_input('id')
+        item = Activity.get_by_id(self.input['id'])
+        if item.status is not Activity.STATUS_PUBLISHED:
+            raise ValidateError('This activity is not published yet.')
+        else:
+            # del item.status
+            item['currentTime'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            return item
+
+
+class TicketView(APIView):
+    def get(self):
+        self.check_input('openid', 'ticket')
+        user = User.get_by_openid(self.input['openid'])
+        student_id = user.student_id
+        detail = Ticket.get_a_ticket(student_id, self.input['ticket'])
+        detail['currentTime'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        return detail

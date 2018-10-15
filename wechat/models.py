@@ -33,13 +33,39 @@ class Activity(models.Model):
     STATUS_SAVED = 0
     STATUS_PUBLISHED = 1
 
+    @classmethod
+    def get_by_id(cls, id):
+        try:
+            return cls.objects.get(id=id)
+        except cls.DoesNotExist:
+            raise LogicError('Activity not found')
+
 
 class Ticket(models.Model):
     student_id = models.CharField(max_length=32, db_index=True)
     unique_id = models.CharField(max_length=64, db_index=True, unique=True)
-    activity = models.ForeignKey(Activity)
+    activity = models.ForeignKey(Activity, on_delete=models.SET_DEFAULT)
     status = models.IntegerField()
 
     STATUS_CANCELLED = 0
     STATUS_VALID = 1
     STATUS_USED = 2
+
+    @classmethod
+    def get_a_ticket(cls, student_id, unique_id):
+        try:
+            ticket = cls.objects.get(student_id=student_id, unique_id=unique_id)
+            foreignkey = ticket.activity
+            res = {
+                'activityName': foreignkey.name,
+                'place': foreignkey.place,
+                'activityKey': foreignkey.key,
+                'uniqueId': ticket.unique_id,
+                'startTime': foreignkey.start_time,
+                'endTime': foreignkey.end_time,
+                'currentTime': 0,
+                'status': ticket.status
+            }
+            return res
+        except cls.DoesNotExist:
+            raise LogicError('Ticket not found')
