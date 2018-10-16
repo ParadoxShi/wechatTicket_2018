@@ -33,3 +33,15 @@ class ValidateError(BaseError):
 
     def __init__(self, msg):
         super(ValidateError, self).__init__(3, msg)
+
+
+class MySQLError(BaseError):
+
+    def __init__(self, msg):
+        super(MySQLError, self).__init__(4, msg)
+
+
+class FileError(BaseError):
+
+    def __init__ (self, msg):
+        super(FileError, self).__init__(5, msg)
