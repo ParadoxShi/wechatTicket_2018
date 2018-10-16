@@ -12,7 +12,7 @@ from wechat.models import Activity, Ticket
 class ActivityCreate(APIView):
     def post(self):
         if not self.request.user.is_authenticated():
-            raise ValidateError('You need to login to visit this.')
+            raise ValidateError('You need to login first.')
         self.check_input('name', 'key', 'place', 'description', 'picUrl', 'startTime', 'endTime', 'bookStart', 'bookEnd', 'totalTickets', 'status')
         try:
             item = Activity.objects.create(name=self.input['name'],
@@ -48,3 +48,46 @@ class ImageUpload(APIView):
         except Exception as e:
             raise FileError('Failed tp upload image.')
 
+
+class ActivityDetail(APIView):
+
+    def get(self):
+        if not self.request.user.is_authenticated():
+            raise ValidateError('You need to login first.')
+        self.check_input('id')
+        try:
+            item = Activity.get_by_id(self.input['id'])
+            item['currentTime'] = time.time()
+            item['bookedTickets'] = item.total_tickets - item.remain_tickets
+            item['usedTickets'] = Ticket.objects.filter(activity=item.name, status=Ticket.STATUS_USED)
+            return item
+        except Exception as e:
+            raise MySQLError('Query activity detail failed!')
+
+    def post(self):
+        if not self.request.user.is_authenticated():
+            raise ValidateError('You need to login first.')
+        #  self.check_input('id', 'name', 'place', 'description', 'picUrl',
+        #                   'startTime', 'endTime', 'bookStart', 'bookend', 'totalTickets', 'status')
+        try:
+            activity = Activity.get_by_id(self.input['id'])
+            if activity.status == Activity.STATUS_SAVED:
+                activity.name = self.input['name']
+                activity.place = self.input['place']
+            activity.description = self.input['description']
+            activity.pic_url = self.input['picUrl']
+            current_time = time.time()
+            if current_time < activity.end_time:
+                activity.start_time = self.input['startTime']
+                activity.end_time = self.input['endTime']
+            if activity.status is not Activity.STATUS_SAVED:
+                activity.book_start = self.input['bookStart']
+            if current_time < activity.start_time:
+                activity.book_end = self.input['bookend']
+            if current_time < activity.book_start:
+                activity.total_tickets = self.input['totalTickets']
+            if activity.status is not Activity.STATUS_PUBLISHED:
+                activity.status = self.input['status']
+            activity.save()
+        except Exception as e:
+            raise MySQLError('Change activity detail failed!')

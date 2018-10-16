@@ -5,7 +5,7 @@ from wechat.models import User
 from wechat.models import Activity
 from wechat.models import Ticket
 
-import datetime
+import time
 
 
 class UserBind(APIView):
@@ -39,7 +39,7 @@ class ActivityView(APIView):
             raise ValidateError('This activity is not published yet.')
         else:
             # del item.status
-            item['currentTime'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            item['currentTime'] = time.time()
             return item
 
 
@@ -49,5 +49,5 @@ class TicketView(APIView):
         user = User.get_by_openid(self.input['openid'])
         student_id = user.student_id
         detail = Ticket.get_a_ticket(student_id, self.input['ticket'])
-        detail['currentTime'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        detail['currentTime'] = time.time()
         return detail
