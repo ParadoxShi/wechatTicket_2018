@@ -155,6 +155,7 @@ STATIC_URL = '/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
+IMAGE_PATH = os.path.join(STATIC_ROOT, 'img/Upload')
 
 # Site and URL
 SITE_DOMAIN = CONFIGS['SITE_DOMAIN'].rstrip('/')

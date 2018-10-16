@@ -5,7 +5,7 @@ from django.conf.urls import url
 from adminpage.views import *
 
 
-__author__ = "caijc16"
+__author__ = "caijc16 and shis16"
 
 
 urlpatterns = [
@@ -13,5 +13,7 @@ urlpatterns = [
     url(r'^logout/?$', LogOut.as_view()),
     url(r'^activity/list/?$', ActivityList.as_view()),
     url(r'^activity/delete/?$', ActivityDelete.as_view()),
-
+    url(r'^activity/create$', ActivityCreate.as_view()),
+    url(r'^image/upload/?$', ImageUpload.as_view()),
+    url(r'^activity/detail/?$', ActivityDetail.as_view()),
 ]
