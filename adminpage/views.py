@@ -19,12 +19,12 @@ class ActivityCreate(APIView):
                                            key=self.input['key'],
                                            place=self.input['place'],
                                            description=self.input['name'],
-                                           picUrl=self.input['picUrl'],
-                                           startTime=self.input['startTime'],
-                                           endTime=self.input['endTime'],
-                                           bookStart=self.input['bookStart'],
-                                           bookEnd=self.input['bookEnd'],
-                                           totalTickets=self.input['totalTickets'],
+                                           pic_url=self.input['picUrl'],
+                                           start_time=self.input['startTime'],
+                                           end_time=self.input['endTime'],
+                                           book_start=self.input['bookStart'],
+                                           book_end=self.input['bookEnd'],
+                                           total_tickets=self.input['totalTickets'],
                                            status=self.input['status']
                                           )
             return item.id
