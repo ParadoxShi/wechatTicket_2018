@@ -199,9 +199,11 @@ class Menu(APIView):
         '''
         current_menu = CustomWeChatView.lib.get_wechat_menu()
         existed_buttons = list()
+        print(current_menu)
         for btn in current_menu:
             if btn['name'] == '抢票':
                 existed_buttons += btn.get('sub_button', list())
+        print(existed_buttons)
         activity_ids = list()
         for btn in existed_buttons:
             if 'key' in btn:
@@ -218,9 +220,10 @@ class Menu(APIView):
         activity_ids = self.get_current_menu_ids()
         try:
             current_activities = Activity.objects.filter(id__in=activity_ids,
-                                                         book_start_lt=timezone.now(),
+                                                         book_start__lt=timezone.now(),
                                                          book_end__gt=timezone.now()
                                                         )
+            print(activity_ids)
         except Exception as e:
             raise MySQLError('Failed to get current activities.')
         try:
@@ -240,6 +243,7 @@ class Menu(APIView):
                     'menuIndex': real_index
                 }
                 activityList.append(activityObj)
+            print(activityList)
             return activityList
         except Exception as e:
             raise MenuError('Failed to get menu.')
@@ -255,7 +259,3 @@ class Menu(APIView):
 
         except Exception as e:
             raise MenuError('Failed to update menu.')
-
-
-
-
