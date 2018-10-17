@@ -128,8 +128,10 @@ class ActivityDetail(APIView):
         self.check_input('id')
         try:
             activity = Activity.get_by_id(self.input['id'])
-            item = {}
+            if(activity.status == Activity.STATUS_DELETED):
+                raise ValidateError('The activity has been deleted.')
 
+            item = {}
             item['name'] = activity.name
             item['key'] = activity.key
             item['description'] = activity.description
