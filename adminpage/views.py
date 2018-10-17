@@ -185,3 +185,63 @@ class ActivityDetail(APIView):
             activity.save()
         except Exception as e:
             raise MySQLError('Change activity detail failed!')
+
+class WechatTicketMenu(APIView):
+
+    def get(self):
+        if not self.request.user.is_authenticated():
+            raise ValidateError('You need to login first.')
+        try:
+            activities = Activity.objects.all()
+            activitiesCanJoinMenu = []
+            current_time = datetime.datetime.now().timestamp()
+            n = 0
+            for activity in activities:
+                if activity.status ==Activity.STATUS_PUBLISHED \
+                    and activity.book_start.timestamp() < current_time \
+                    and activity.book_end.timestamp() > current_time:
+                    n += 1
+                    activityObj = {
+                        'id': activity.id,
+                        'name': activity.name,
+                        'menulndex': n
+                    }
+                    activitiesCanJoinMenu.append(activityObj)
+            return activitiesCanJoinMenu
+        except Exception as e:
+            raise MySQLError('Get wechat ticket menu failed!')
+
+    def post(self):
+        if not self.request.user.is_authenticated():
+            raise ValidateError('You need to login first.')
+        pass
+
+
+class CheckTicket(APIView):
+
+    def post(self):
+        if not self.request.user.is_authenticated():
+            raise ValidateError('You need to login first.')
+        try:
+            if 'ticket' in self.input:
+                ticket = Ticket.get_by_id(self.input['ticket'])
+                res = {
+                    'ticket': ticket.unique_id,
+                    'studentId': ticket.student_id
+                }
+                return res
+            elif 'studentId' in self.input:
+                tickets = Ticket.get_by_studentId(self.input['studentId'])
+                input_id = self.input['id']
+                for ticket in tickets:
+                    if ticket.activity.id == input_id:
+                        res = {
+                            'ticket': ticket.unique_id,
+                            'studentId':ticket.student_id
+                        }
+                        return res
+                raise MySQLError('Find ticket failed!')
+            else:
+                raise ValidateError('You need to input ticket or studentId first')
+        except Exception as e:
+            raise LogicError('Check ticket failed!')
