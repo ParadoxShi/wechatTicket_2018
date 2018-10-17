@@ -72,10 +72,11 @@ class ActivityDelete(APIView):
         self.check_input('id')
         try:
             activity_to_be_deleted = Activity.objects.get(id=self.input['id'])
+            activity_to_be_deleted.status = Activity.STATUS_DELETED
+            activity_to_be_deleted.save()
         except Activity.DoesNotExist:
             raise ValidateError('The activity to be deleted does not exist.')
-        activity_to_be_deleted.status = Activity.STATUS_DELETED
-        activity_to_be_deleted.save()
+       
 
 
 class ActivityCreate(APIView):
