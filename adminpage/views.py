@@ -186,38 +186,9 @@ class ActivityDetail(APIView):
         except Exception as e:
             raise MySQLError('Change activity detail failed!')
 
-class WechatTicketMenu(APIView):
-
-    def get(self):
-        if not self.request.user.is_authenticated():
-            raise ValidateError('You need to login first.')
-        try:
-            activities = Activity.objects.all()
-            activitiesCanJoinMenu = []
-            current_time = datetime.datetime.now().timestamp()
-            n = 0
-            for activity in activities:
-                if activity.status ==Activity.STATUS_PUBLISHED \
-                    and activity.book_start.timestamp() < current_time \
-                    and activity.book_end.timestamp() > current_time:
-                    n += 1
-                    activityObj = {
-                        'id': activity.id,
-                        'name': activity.name,
-                        'menulndex': n
-                    }
-                    activitiesCanJoinMenu.append(activityObj)
-            return activitiesCanJoinMenu
-        except Exception as e:
-            raise MySQLError('Get wechat ticket menu failed!')
-
-    def post(self):
-        if not self.request.user.is_authenticated():
-            raise ValidateError('You need to login first.')
-        pass
 
 
-class CheckTicket(APIView):
+class Checkin(APIView):
 
     def post(self):
         if not self.request.user.is_authenticated():
@@ -242,6 +213,6 @@ class CheckTicket(APIView):
                         return res
                 raise MySQLError('Find ticket failed!')
             else:
-                raise ValidateError('You need to input ticket or studentId first')
+                raise ValidateError('You need to input your ticketId or studentId.')
         except Exception as e:
             raise LogicError('Check ticket failed!')
