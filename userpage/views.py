@@ -12,8 +12,8 @@ class UserBind(APIView):
         input: self.input['student_id'] and self.input['password']
         raise: ValidateError when validating failed
         """
-        if(user.student_id == self.input['openid']
-            && user.password == self.input['password']):
+        if(User.get_by_openid(self.input['openid']).student_id == self.input['openid']
+            and User.get_by_openid(self.input['openid']).password == self.input['password']):
             return
         else:
             raise NotImplementedError('You should implement UserBind.validate_user method')
@@ -33,7 +33,7 @@ class UserBind(APIView):
 class ActivityDetail(APIView):
 
     def activity_realised(self):
-        if(activity.status == STATUS_PUBLISHED):
+        if(Activity.get_by_key(self.input['key']).status == STATUS_PUBLISHED):
             return
         else:
             raise NotImplementedError('The Activity has not published')
