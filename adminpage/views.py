@@ -22,10 +22,9 @@ class Login(APIView):
     def post(self):
         self.check_input('username', 'password')
         user = auth.authenticate(username=self.input['username'], password=self.input['password'])
-        if user is not None:
-            if user.is_active:
-                auth.login(self.request, user)
-                return
+        if (user is not None and user.is_active):
+            auth.login(self.request, user)
+            return
         raise ValidateError('Oops, login failed.....')
 
 
@@ -73,10 +72,10 @@ class ActivityDelete(APIView):
         self.check_input('id')
         try:
             activity_to_be_deleted = Activity.objects.get(id=self.input['id'])
+            activity_to_be_deleted.status = Activity.STATUS_DELETED
+            activity_to_be_deleted.save()
         except Activity.DoesNotExist:
             raise ValidateError('The activity to be deleted does not exist.')
-        activity_to_be_deleted.status = Activity.STATUS_DELETED
-        activity_to_be_deleted.save()
 
 
 class ActivityCreate(APIView):
@@ -118,7 +117,7 @@ class ImageUpload(APIView):
             url = settings.SITE_DOMAIN + '/img/Upload/' + img.name
             return url
         except Exception as e:
-            raise FileError('Failed tp upload image.')
+            raise FileError('Failed to upload image.')
 
 
 class ActivityDetail(APIView):
@@ -129,8 +128,10 @@ class ActivityDetail(APIView):
         self.check_input('id')
         try:
             activity = Activity.get_by_id(self.input['id'])
-            item = {}
+            if activity.status == Activity.STATUS_DELETED:
+                raise ValidateError('The activity has been deleted.')
 
+            item = {}
             item['name'] = activity.name
             item['key'] = activity.key
             item['description'] = activity.description
@@ -259,3 +260,34 @@ class Menu(APIView):
 
         except Exception as e:
             raise MenuError('Failed to update menu.')
+
+
+class Checkin(APIView):
+
+    def post(self):
+        if not self.request.user.is_authenticated():
+            raise ValidateError('You need to login first.')
+        try:
+            if 'ticket' in self.input:
+                ticket = Ticket.get_by_id(self.input['ticket'])
+                res = {
+                    'ticket': ticket.unique_id,
+                    'studentId': ticket.student_id
+                }
+                return res
+            elif 'studentId' in self.input:
+                tickets = Ticket.get_by_studentId(self.input['studentId'])
+                input_id = self.input['id']
+                for ticket in tickets:
+                    if ticket.activity.id == input_id:
+                        res = {
+                            'ticket': ticket.unique_id,
+                            'studentId':ticket.student_id
+                        }
+                        return res
+                raise MySQLError('Find ticket failed!')
+            else:
+                raise ValidateError('You need to input your ticketId or studentId.')
+        except Exception as e:
+            raise LogicError('Check ticket failed!')
+
