@@ -128,7 +128,7 @@ class ActivityDetail(APIView):
         self.check_input('id')
         try:
             activity = Activity.get_by_id(self.input['id'])
-            if(activity.status == Activity.STATUS_DELETED):
+            if activity.status == Activity.STATUS_DELETED:
                 raise ValidateError('The activity has been deleted.')
 
             item = {}
