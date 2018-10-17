@@ -3,8 +3,10 @@ from codex.baseerror import *
 from codex.baseview import APIView
 from django.contrib.auth.decorators import login_required
 from django.contrib import auth
+from django.utils import timezone
 from wechat.models import Activity
 from wechat.models import Ticket
+from wechat.views import CustomWeChatView
 import datetime
 from django.conf import settings
 import os
@@ -185,3 +187,75 @@ class ActivityDetail(APIView):
             activity.save()
         except Exception as e:
             raise MySQLError('Change activity detail failed!')
+
+
+class Menu(APIView):
+
+    def get_current_menu_ids(self):
+        '''
+        Copy From wechat/view.py
+        :param
+        :return: ids
+        '''
+        current_menu = CustomWeChatView.lib.get_wechat_menu()
+        existed_buttons = list()
+        for btn in current_menu:
+            if btn['name'] == '抢票':
+                existed_buttons += btn.get('sub_button', list())
+        activity_ids = list()
+        for btn in existed_buttons:
+            if 'key' in btn:
+                activity_id = btn['key']
+                if activity_id.startswith(CustomWeChatView.event_keys['book_header']):
+                    activity_id = activity_id[len(CustomWeChatView.event_keys['book_header']):]
+                if activity_id and activity_id.isdigit():
+                    activity_ids.append(int(activity_id))
+        return activity_ids
+
+    def get(self):
+        if not self.request.user.is_authenticated():
+            raise ValidateError('Sorry, you are not logged in.')
+        activity_ids = self.get_current_menu_ids()
+        try:
+            current_activities = Activity.objects.filter(id__in=activity_ids,
+                                                         book_start_lt=timezone.now(),
+                                                         book_end__gt=timezone.now()
+                                                        )
+        except Exception as e:
+            raise MySQLError('Failed to get current activities.')
+        try:
+            activityList = []
+            index = 0
+            for activity in current_activities:
+                if activity.status == Activity.STATUS_PUBLISHED:
+                    index += 1
+                    real_index = index
+                elif activity.status == Activity.STATUS_SAVED:
+                    real_index = 0
+                else:
+                    continue
+                activityObj = {
+                    'id': activity.id,
+                    'name': activity.name,
+                    'menuIndex': real_index
+                }
+                activityList.append(activityObj)
+            return activityList
+        except Exception as e:
+            raise MenuError('Failed to get menu.')
+
+    def post(self):
+        if not self.request.user.is_authenticated():
+            raise ValidateError('Sorry, you are not logged in.')
+        # self.check_input('id')
+        try:
+            in_act = self.input
+            activities = Activity.objects.filter(id__in=in_act)
+            CustomWeChatView.update_menu(activities=activities)
+
+        except Exception as e:
+            raise MenuError('Failed to update menu.')
+
+
+
+

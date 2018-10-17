@@ -5,7 +5,7 @@ from wechat.models import User
 from wechat.models import Activity
 from wechat.models import Ticket
 
-import time
+import datetime
 
 
 class UserBind(APIView):
@@ -17,6 +17,8 @@ class UserBind(APIView):
         """
         self.check_input('openid', 'password')
         user = User.get_by_openid(self.input['openid'])
+        if user is not None:
+            raise ValidateError('You have already done this.')
         # 貌似暂时不需要实现这玩意了
 
     def get(self):
@@ -39,8 +41,20 @@ class ActivityView(APIView):
             raise ValidateError('This activity is not published yet.')
         else:
             # del item.status
-            item['currentTime'] = time.time()
-            return item
+            res_item = {}
+            res_item['name'] = item.name
+            res_item['key'] = item.key
+            res_item['description'] = item.description
+            res_item['startTime'] = item.start_time.timestamp()
+            res_item['endTime'] = item.end_time.timestamp()
+            res_item['place'] = item.place
+            res_item['bookStart'] = item.book_start
+            res_item['bookEnd'] = item.book_end
+            res_item['totalTickets'] = item.total_tickets
+            res_item['picUrl'] = item.pic_url
+            res_item['remainTickets'] = item.remain_tickets
+            res_item['currentTime'] = datetime.datetime.now().timestamp()
+            return res_item
 
 
 class TicketView(APIView):
@@ -49,5 +63,5 @@ class TicketView(APIView):
         user = User.get_by_openid(self.input['openid'])
         student_id = user.student_id
         detail = Ticket.get_a_ticket(student_id, self.input['ticket'])
-        detail['currentTime'] = time.time()
+        detail['currentTime'] = datetime.datetime().now().timestamp()
         return detail

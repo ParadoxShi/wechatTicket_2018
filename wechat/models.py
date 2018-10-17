@@ -61,7 +61,7 @@ class Ticket(models.Model):
                 'place': foreignkey.place,
                 'activityKey': foreignkey.key,
                 'uniqueId': ticket.unique_id,
-                'startTime': foreignkey.start_time,
+                'startTime': foreignkey.start_time.timestamp(),
                 'endTime': foreignkey.end_time,
                 'currentTime': 0,
                 'status': ticket.status
