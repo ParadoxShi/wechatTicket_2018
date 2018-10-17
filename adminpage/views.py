@@ -76,7 +76,6 @@ class ActivityDelete(APIView):
             activity_to_be_deleted.save()
         except Activity.DoesNotExist:
             raise ValidateError('The activity to be deleted does not exist.')
-       
 
 
 class ActivityCreate(APIView):
@@ -118,7 +117,7 @@ class ImageUpload(APIView):
             url = settings.SITE_DOMAIN + '/img/Upload/' + img.name
             return url
         except Exception as e:
-            raise FileError('Failed tp upload image.')
+            raise FileError('Failed to upload image.')
 
 
 class ActivityDetail(APIView):
