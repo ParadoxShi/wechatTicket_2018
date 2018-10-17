@@ -219,7 +219,7 @@ class Menu(APIView):
         activity_ids = self.get_current_menu_ids()
         try:
             current_activities = Activity.objects.filter(id__in=activity_ids,
-                                                         book_start_lt=timezone.now(),
+                                                         book_start__lt=timezone.now(),
                                                          book_end__gt=timezone.now()
                                                         )
         except Exception as e:
@@ -258,5 +258,32 @@ class Menu(APIView):
             raise MenuError('Failed to update menu.')
 
 
+class Checkin(APIView):
 
+    def post(self):
+        if not self.request.user.is_authenticated():
+            raise ValidateError('You need to login first.')
+        try:
+            if 'ticket' in self.input:
+                ticket = Ticket.get_by_id(self.input['ticket'])
+                res = {
+                    'ticket': ticket.unique_id,
+                    'studentId': ticket.student_id
+                }
+                return res
+            elif 'studentId' in self.input:
+                tickets = Ticket.get_by_studentId(self.input['studentId'])
+                input_id = self.input['id']
+                for ticket in tickets:
+                    if ticket.activity.id == input_id:
+                        res = {
+                            'ticket': ticket.unique_id,
+                            'studentId':ticket.student_id
+                        }
+                        return res
+                raise MySQLError('Find ticket failed!')
+            else:
+                raise ValidateError('You need to input your ticketId or studentId.')
+        except Exception as e:
+            raise LogicError('Check ticket failed!')
 

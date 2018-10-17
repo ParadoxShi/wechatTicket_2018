@@ -69,3 +69,17 @@ class Ticket(models.Model):
             return res
         except cls.DoesNotExist:
             raise LogicError('Ticket not found')
+
+    @classmethod
+    def get_by_id(cls, unique_id):
+        try:
+            return cls.objects.get(unique_id=unique_id)
+        except cls.DoesNotExist:
+            raise LogicError('Ticket not found')
+
+    @classmethod
+    def get_by_studentId(cls, student_id):
+        try:
+            return cls.objects.filter(student_id=student_id)
+        except cls.DoesNotExist:
+            raise LogicError('Ticket not found')
