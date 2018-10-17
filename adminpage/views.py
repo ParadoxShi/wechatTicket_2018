@@ -189,15 +189,15 @@ class ActivityDetail(APIView):
         except Exception as e:
             raise MySQLError('Change activity detail failed!')
 
-
+'''
 class Menu(APIView):
 
     def get_current_menu_ids(self):
-        '''
+        
         Copy From wechat/view.py
         :param
         :return: ids
-        '''
+        
         current_menu = CustomWeChatView.lib.get_wechat_menu()
         existed_buttons = list()
         for btn in current_menu:
@@ -256,6 +256,40 @@ class Menu(APIView):
 
         except Exception as e:
             raise MenuError('Failed to update menu.')
+'''
+
+
+class Menu(APIView):
+
+    def get(self):
+        if not self.request.user.is_authenticated():
+            raise ValidateError('You need to login first.')
+        try:
+            current_activities = Activity.objects.filter(status=1,
+                                                         book_start__lt=timezone.now(),
+                                                         book_end__gt=timezone.now()
+                                                         )
+            activitiyMenu = []
+            for activity in current_activities:
+                activityObj = {
+                    'id': activity.id,
+                    'name': activity.name,
+                    'menulndex': 0
+                }
+                activitiyMenu.append(activityObj)
+            return activitiyMenu
+        except Exception as e:
+            raise MenuError('Failed to get menu.')
+
+    def post(self):
+        if not self.request.user.is_authenticated():
+            raise ValidateError('Sorry, you are not logged in.')
+        try:
+            ids = self.input
+            
+            pass
+        except Exception as e:
+            raise MenuError('Failed to change menu.')
 
 
 class Checkin(APIView):
