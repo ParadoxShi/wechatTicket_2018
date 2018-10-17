@@ -22,10 +22,9 @@ class Login(APIView):
     def post(self):
         self.check_input('username', 'password')
         user = auth.authenticate(username=self.input['username'], password=self.input['password'])
-        if user is not None:
-            if user.is_active:
-                auth.login(self.request, user)
-                return
+        if (user is not None and user.is_active):
+            auth.login(self.request, user)
+            return
         raise ValidateError('Oops, login failed.....')
 
 
