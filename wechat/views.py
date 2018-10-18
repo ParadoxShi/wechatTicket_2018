@@ -11,7 +11,9 @@ class CustomWeChatView(WeChatView):
     lib = WeChatLib(WECHAT_TOKEN, WECHAT_APPID, WECHAT_SECRET)
 
     handlers = [
-        HelpOrSubscribeHandler, UnbindOrUnsubscribeHandler, BindAccountHandler, BookEmptyHandler,BookWhatHandler
+        HelpOrSubscribeHandler, UnbindOrUnsubscribeHandler, BindAccountHandler, BookEmptyHandler,
+        # add some new handlers here
+        BookWhatHandler, BookTicketHandler,GetTicketHandler
     ]
     error_message_handler = ErrorHandler
     default_handler = DefaultHandler

@@ -15,7 +15,6 @@ class UserBind(APIView):
         input: self.input['student_id'] and self.input['password']
         raise: ValidateError when validating failed
         """
-
         if False:
             raise ValidateError('Student ID or password incorrect!')
         if len(User.objects.filter(student_id=self.input['student_id'])) > 0:
