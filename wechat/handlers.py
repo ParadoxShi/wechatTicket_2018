@@ -73,7 +73,6 @@ class BookWhatHandler(WeChatHandler):
             return self.reply_text(self.get_message('bind_account'))
         act_list = Activity.objects.filter(status=Activity.STATUS_PUBLISHED)
         for item in act_list:
-            print(item.id)
             acts.append({
                 'Url': settings.get_url('u/activity', {'id': item.id}),
                 'Title': '%s' % item.name,
@@ -86,17 +85,32 @@ class BookWhatHandler(WeChatHandler):
 class BookTicketHandler(WeChatHandler):
 
     def createUID(self, openid):
-        uid = uuid.uuid4() + openid
+        uid = str(uuid.uuid4()) + openid
         return uid
 
     def check(self):
-        return self.is_text('抢票')
+        flag = False
+        if self.is_text_command('抢票'):
+            self.entry_type = 1
+            flag = True
+        elif self.is_msg_type('event') and (self.input['Event'] == 'CLICK')\
+                and (self.input['EventKey'].startswith(self.view.event_keys['book_header'])):
+            self.entry_type = 2
+            flag = True
+        return flag
 
     def handle(self):
         if not self.user.student_id:
             return self.reply_text(self.get_message('bind_account'))
-        activity_key = self.input[3:]   # str
-        activity_list = Activity.objects.filter(key=activity_key)
+        activity_list = []
+        if self.entry_type == 1:
+            activity_key = self.input['Content'][3:]
+            activity_list = Activity.objects.filter(key=activity_key)
+        elif self.entry_type == 2:
+            activity_id = self.input['EventKey'][len(self.view.event_keys['book_header']):]
+            activity_list = Activity.objects.filter(id=activity_id)
+            activity_key = activity_list[0].key
+
         if len(activity_list) == 0:
             return self.reply_text('没有记录！')
         remain_count = activity_list[0].remain_tickets
@@ -110,6 +124,8 @@ class BookTicketHandler(WeChatHandler):
                 activity=activity_list[0],
                 status=Ticket.STATUS_VALID
             )
+            activity_list[0].remain_tickets -= 1
+            activity_list[0].save()
             return self.reply_text('成功！')
         else:
             return self.reply_text('票已抢完。')
