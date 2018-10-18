@@ -34,9 +34,9 @@ class Activity(models.Model):
     STATUS_PUBLISHED = 1
 
     @classmethod
-    def get_by_key(cls, key1):
+    def get_by_id(cls, id):
         try:
-            return cls.objects.get(key=key1)
+            return cls.objects.get(id=id)
         except cls.DoesNotExist:
             raise LogicError('Activity not found')
 
@@ -50,3 +50,36 @@ class Ticket(models.Model):
     STATUS_CANCELLED = 0
     STATUS_VALID = 1
     STATUS_USED = 2
+
+    @classmethod
+    def get_a_ticket(cls, student_id, unique_id):
+        try:
+            ticket = cls.objects.get(student_id=student_id, unique_id=unique_id)
+            foreignkey = ticket.activity
+            res = {
+                'activityName': foreignkey.name,
+                'place': foreignkey.place,
+                'activityKey': foreignkey.key,
+                'uniqueId': ticket.unique_id,
+                'startTime': foreignkey.start_time.timestamp(),
+                'endTime': foreignkey.end_time,
+                'currentTime': 0,
+                'status': ticket.status
+            }
+            return res
+        except cls.DoesNotExist:
+            raise LogicError('Ticket not found')
+
+    @classmethod
+    def get_by_id(cls, unique_id):
+        try:
+            return cls.objects.get(unique_id=unique_id)
+        except cls.DoesNotExist:
+            raise LogicError('Ticket not found')
+
+    @classmethod
+    def get_by_studentId(cls, student_id):
+        try:
+            return cls.objects.filter(student_id=student_id)
+        except cls.DoesNotExist:
+            raise LogicError('Ticket not found')

@@ -3,6 +3,9 @@ from codex.baseview import APIView
 
 from wechat.models import User
 from wechat.models import Activity
+from wechat.models import Ticket
+
+import datetime
 
 
 class UserBind(APIView):
@@ -12,35 +15,56 @@ class UserBind(APIView):
         input: self.input['student_id'] and self.input['password']
         raise: ValidateError when validating failed
         """
-        if(User.get_by_openid(self.input['openid']).student_id == self.input['openid']
-            and User.get_by_openid(self.input['openid']).password == self.input['password']):
-            return
-        else:
-            raise NotImplementedError('You should implement UserBind.validate_user method')
-            return
+        # 貌似暂时不需要实现这玩意了
+        if False:
+            raise ValidateError('Student ID or password incorrect!')
+        if len(User.objects.filter(student_id=self.input['student_id'])) > 0:
+            raise ValidateError('You are already in')
+
 
     def get(self):
+        print('here')
         self.check_input('openid')
         return User.get_by_openid(self.input['openid']).student_id
 
     def post(self):
+        print('here')
         self.check_input('openid', 'student_id', 'password')
         user = User.get_by_openid(self.input['openid'])
         self.validate_user()
         user.student_id = self.input['student_id']
         user.save()
 
-class ActivityDetail(APIView):
 
-    def activity_realised(self):
-        if(Activity.get_by_key(self.input['key']).status == STATUS_PUBLISHED):
-            return
-        else:
-            raise NotImplementedError('The Activity has not published')
-            return
-
+class ActivityView(APIView):
     def get(self):
-        self.check_input('key')
-        activity = Activity.get_by_key(self.input['key'])
-        self.activity_realised()
-        return {'name':activity.name, 'key':activity.key}#and so on
+        self.check_input('id')
+        item = Activity.get_by_id(self.input['id'])
+        if item.status is not Activity.STATUS_PUBLISHED:
+            raise ValidateError('This activity is not published yet.')
+        else:
+            # del item.status
+            res_item = {}
+            res_item['name'] = item.name
+            res_item['key'] = item.key
+            res_item['description'] = item.description
+            res_item['startTime'] = item.start_time.timestamp()
+            res_item['endTime'] = item.end_time.timestamp()
+            res_item['place'] = item.place
+            res_item['bookStart'] = item.book_start.timestamp()
+            res_item['bookEnd'] = item.book_end.timestamp()
+            res_item['totalTickets'] = item.total_tickets
+            res_item['picUrl'] = item.pic_url
+            res_item['remainTickets'] = item.remain_tickets
+            res_item['currentTime'] = datetime.datetime.now().timestamp()
+            return res_item
+
+
+class TicketView(APIView):
+    def get(self):
+        self.check_input('openid', 'ticket')
+        user = User.get_by_openid(self.input['openid'])
+        student_id = user.student_id
+        detail = Ticket.get_a_ticket(student_id, self.input['ticket'])
+        detail['currentTime'] = datetime.datetime().now().timestamp()
+        return detail
