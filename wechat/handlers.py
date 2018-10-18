@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-from wechat.wrapper import WeChatHandler
+from wechat.wrapper import WeChatHandler, WeChatLib
 from wechat.models import Activity, Ticket
 from WeChatTicket import settings
 import random
@@ -22,10 +22,10 @@ class ErrorHandler(WeChatHandler):
 class DefaultHandler(WeChatHandler):
 
     def check(self):
-        return False
+        return True
 
     def handle(self):
-        print('ErrorHandler-hander')
+        print('defaultHandler-hander')
         return self.reply_text(' DefaultHandler，没有找到您需要的信息:(')
 
 
@@ -64,7 +64,6 @@ class BindAccountHandler(WeChatHandler):
 
 
 class BookWhatHandler(WeChatHandler):
-
     def check(self):
         return self.is_text('抢啥') or self.is_event_click(self.view.event_keys['book_what'])
 
@@ -87,16 +86,17 @@ class BookWhatHandler(WeChatHandler):
 class BookTicketHandler(WeChatHandler):
 
     def createUID(self, openid):
-        uid = uuid.uuid4() + openid
+        uid = str(uuid.uuid4()) + openid
         return uid
 
     def check(self):
-        return self.is_text('抢票')
+        if self.is_text_command('抢票'):
+            return True
 
     def handle(self):
         if not self.user.student_id:
             return self.reply_text(self.get_message('bind_account'))
-        activity_key = self.input[3:]   # str
+        activity_key = self.input['Content'][3:]   # str
         activity_list = Activity.objects.filter(key=activity_key)
         if len(activity_list) == 0:
             return self.reply_text('没有记录！')
@@ -131,16 +131,18 @@ class GetTicketHandler(WeChatHandler):
         return self.is_text('查票') or self.is_event_click(self.view.event_keys['get_ticket'])
 
     def handle(self):
-        tickets = []
         if not self.user.student_id:
             return self.reply_text(self.get_message('bind_account'))
-        ticket_list = Ticket.get_by_studentId(student_id=self.user.student_id)
-        for item in ticket_list:
-            print(item.id)
+        tickets = []
+        thisUser = self.user
+        ticket_list = Ticket.get_by_studentId(student_id=thisUser.student_id)
+        for ticket in ticket_list:
+            print(ticket.id)
             tickets.append({
-                'Url': settings.get_url('/u/ticket', {'id': item.id}),
-                'Title': '%s' % item.activity.name,
-                'Description': item.activity.description,
-                'PicUrl': item.activity.pic_url
+                'Url': settings.get_url('/u/ticket', {'openid':thisUser.open_id, 'ticket':ticket.unique_id}),
+                'Title': '%s' % ticket.activity.name,
+                'Description': ticket.activity.description,
+                'PicUrl': ticket.activity.pic_url
             })
         return self.reply_news(articles=tickets)
+
