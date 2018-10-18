@@ -1,7 +1,8 @@
 from django.test import TestCase, Client
+from django.utils import timezone
+from datetime import timedelta
 from wechat.models import Activity, User
 import xml.etree.ElementTree as etree
-import datetime
 
 
 test_open_id = '0247'
@@ -24,10 +25,10 @@ act_published = Activity(id=5,
                          place='Hall',
                          description='published act',
                          pic_url='temp path',
-                         start_time=datetime.datetime.now(),
-                         end_time=datetime.datetime.now(),
-                         book_start=datetime.datetime.now(),
-                         book_end=datetime.datetime.now(),
+                         start_time=timezone.now()+timedelta(100),
+                         end_time=timezone.now()+timedelta(200),
+                         book_start=timezone.now()+timedelta(-10),
+                         book_end=timezone.now()+timedelta(20),
                          total_tickets=1000,
                          status=Activity.STATUS_PUBLISHED,
                          remain_tickets=1000
