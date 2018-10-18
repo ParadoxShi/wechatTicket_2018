@@ -86,16 +86,16 @@ class BookWhatHandler(WeChatHandler):
 class BookTicketHandler(WeChatHandler):
 
     def createUID(self, openid):
-        uid = uuid.uuid4() + openid
+        uid = str(uuid.uuid4()) + openid
         return uid
 
     def check(self):
-        return self.is_text('抢票')
+        return self.is_text_command('抢票')
 
     def handle(self):
         if not self.user.student_id:
             return self.reply_text(self.get_message('bind_account'))
-        activity_key = self.input[3:]   # str
+        activity_key = self.input['Content'][3:]   # str
         activity_list = Activity.objects.filter(key=activity_key)
         if len(activity_list) == 0:
             return self.reply_text('没有记录！')
