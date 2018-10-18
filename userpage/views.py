@@ -15,17 +15,19 @@ class UserBind(APIView):
         input: self.input['student_id'] and self.input['password']
         raise: ValidateError when validating failed
         """
-        self.check_input('openid', 'password')
-        user = User.get_by_openid(self.input['openid'])
-        if user is not None:
-            raise ValidateError('You have already done this.')
         # 貌似暂时不需要实现这玩意了
+        if False:
+            raise ValidateError('Student ID or password incorrect!')
+        if len(User.objects.filter(student_id=self.input['student_id'])) > 0:
+            raise ValidateError('You are already in')
 
     def get(self):
+        print('here')
         self.check_input('openid')
         return User.get_by_openid(self.input['openid']).student_id
 
     def post(self):
+        print('here')
         self.check_input('openid', 'student_id', 'password')
         user = User.get_by_openid(self.input['openid'])
         self.validate_user()
@@ -48,8 +50,8 @@ class ActivityView(APIView):
             res_item['startTime'] = item.start_time.timestamp()
             res_item['endTime'] = item.end_time.timestamp()
             res_item['place'] = item.place
-            res_item['bookStart'] = item.book_start
-            res_item['bookEnd'] = item.book_end
+            res_item['bookStart'] = item.book_start.timestamp()
+            res_item['bookEnd'] = item.book_end.timestamp()
             res_item['totalTickets'] = item.total_tickets
             res_item['picUrl'] = item.pic_url
             res_item['remainTickets'] = item.remain_tickets

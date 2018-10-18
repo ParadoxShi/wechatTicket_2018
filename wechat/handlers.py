@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 from wechat.wrapper import WeChatHandler
+from wechat.models import Activity, Ticket
+from WeChatTicket import settings
 
 
 __author__ = "Epsirom"
@@ -56,6 +58,27 @@ class BindAccountHandler(WeChatHandler):
 
     def handle(self):
         return self.reply_text(self.get_message('bind_account'))
+
+
+class BookWhatHandler(WeChatHandler):
+
+    def check(self):
+        return self.is_text('抢啥') or self.is_event_click(self.view.event_keys['book_what'])
+
+    def handle(self):
+        acts = []
+        if not self.user.student_id:
+            return self.reply_text(self.get_message('bind_account'))
+        act_list = Activity.objects.filter(status=Activity.STATUS_PUBLISHED)
+        for item in act_list:
+            print(item.id)
+            acts.append({
+                'Url': settings.get_url('u/activity', {'id': item.id}),
+                'Title': '%s' % item.name,
+                'Description': item.description,
+                'PicUrl': item.pic_url
+            })
+        return self.reply_news(articles=acts)
 
 
 class BookEmptyHandler(WeChatHandler):
