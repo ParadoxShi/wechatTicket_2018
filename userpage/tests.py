@@ -30,6 +30,12 @@ act_published = {"id": 1,
                  "picUrl": "test_url"
 }
 
+ticket_valid = {"student_id": '2016010101',
+                "unique_id": '201601010101',
+                "activity": act_published,
+                "status": Ticket.STATUS_VALID
+}
+
 class userBindTest(TestCase):
     """
     Test For API 1
@@ -73,16 +79,46 @@ class activityDetailTest(TestCase):
         self.cl.post('api/u/login',sys_superuser)
 
     def tearDown(self):
+        Activity.objects.all().delete()
         self.cl.post('/api/u/logout',sys_superuser)
 
     def test_getActivityDetail(self):
-        res = self.cl.post('api/u/activity/detail',1)
+        res = self.cl.get('api/u/activity/detail',1)
         res_content = res.content.decode('utf-8')
         self.assertEqual(json.loads(res_content)['code'], 0)
         # try to get detail of a exist activity
 
     def test_getActivityDetail_2(self):
-        res = self.cl.post('api/u/activity/detail',-1)
+        res = self.cl.get('api/u/activity/detail',-1)
         res_content = res.content.decode('utf-8')
         self.assertNotEqual(json.loads(res_content)['code'], 0)
         # try to get detail of a non-existent activity
+
+class ticketDetailTest(TestCase):
+    """
+    Test For API 3
+    """
+    def setUp(self):
+        djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'],sys_superuser['password'])
+        Activity(act_published).save()
+        Ticket(ticket_valid).save()
+        self.cl = Client()
+        self.cl.post('api/u/login',sys_superuser)
+
+    def tearDown(self):
+        Ticket.objects.all().delete()
+        Activity.objects.all().delete()
+        self.cl.post('/api/u/logout',sys_superuser)
+
+    def test_getTicketDetail(self):
+        res = self.cl.get('api/u/ticket/detail','201601010101')
+        res_content = res.content.decode('utf-8')
+        self.assertEqual(json.loads(res_content)['code'], 0)
+        # try to get detail of a exist ticket
+
+    def test_getTicketDetail_2(self):
+        res = self.cl.get('api/u/ticket/detail','-1')
+        res_content = res.content.decode('utf-8')
+        self.assertNotEqual(json.loads(res_content)['code'], 0)
+        # try to get detail of a non-existent ticket
+        
