@@ -276,12 +276,14 @@ class Checkin(APIView):
                 return res
             elif 'studentId' in self.input:
                 tickets = Ticket.get_by_studentId(self.input['studentId'])
-                input_id = self.input['id']
+
+                input_id = self.input['actId']
+
                 for ticket in tickets:
-                    if ticket.activity.id == input_id:
+                    if str(ticket.activity.id) == input_id:
                         res = {
                             'ticket': ticket.unique_id,
-                            'studentId':ticket.student_id
+                            'studentId': ticket.student_id
                         }
                         return res
                 raise MySQLError('Find ticket failed!')

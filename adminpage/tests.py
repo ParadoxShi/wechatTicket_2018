@@ -219,7 +219,6 @@ class ActivityDeleteTest(TestCase):
         pass
 
 
-
 class CreateActivityTest(TestCase):
     """
     Test For API 8
@@ -297,8 +296,9 @@ class ActivityDetailTest(TestCase):
 class MenuTest(TestCase):
     '''
     Test for API 11
-    This is not available on travisCI
-    Due to access_token error
+    This is not available on travisCI due to access_token error,
+    I tried it on my PC and it worked!
+    If you wish to test this, just cancel the comment and then open terminal and type 'python manage.py test'.
     '''
     def setUp(self):
         djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'], sys_superuser['password'])
@@ -317,13 +317,66 @@ class MenuTest(TestCase):
         res_content = res.content.decode('utf-8')
         self.assertEqual(json.loads(res_content)['code'], 0)
 
-    def test_addToMenu(self):
-        res = self.cl.post('/api/a/activity/menu', {'activity_ids': [act_saved['id'], act_published['id']]})
-        res_content = res.content.decode('utf-8')
-        self.assertEqual(json.loads(res_content)['code'], 0)
-
-    def test_deleteInMenu(self):
-        res = self.cl.post('/api/a/activity/menu', {'activity_ids': []})
+    def test_postMenu(self):
+        res = self.cl.post('/api/a/activity/menu', {act_saved['id']: act_saved['id'], act_published['id']: act_published['id']})
         res_content = res.content.decode('utf-8')
         self.assertEqual(json.loads(res_content)['code'], 0)
 """
+
+ticket_valid = {
+    "open_id": '0003',
+    "student_id": '2016010101',
+    "unique_id": 'RDWS',
+    "status": Ticket.STATUS_VALID
+}
+
+
+class checkInTest(TestCase):
+    """
+    Test For API 12
+    """
+    def setUp(self):
+        djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'],
+                                            sys_superuser['password'])
+        Activity(**act_published).save()
+        User.objects.create(open_id=ticket_valid['open_id'], student_id=ticket_valid['student_id'])
+        Ticket.objects.create(
+            student_id=ticket_valid['student_id'],
+            unique_id=ticket_valid['unique_id'],
+            activity=Activity.objects.get(id=act_published['id']),
+            status=Ticket.STATUS_VALID
+        )
+        self.cl = Client()
+        self.cl.post('/api/a/login', sys_superuser)
+
+    def tearDown(self):
+        User.objects.all().delete()
+        Ticket.objects.all().delete()
+        Activity.objects.all().delete()
+        self.cl.post('/api/a/logout', sys_superuser)
+
+    def test_checkIn(self):
+        res = self.cl.post('/api/a/activity/checkin', {'actId': act_published['id'], 'ticket': ticket_valid['unique_id']})
+        res_content = res.content.decode('utf-8')
+        self.assertEqual(json.loads(res_content)['code'], 0)
+        self.assertEqual(json.loads(res_content)['data']['studentId'], ticket_valid['student_id'])
+        # try to check in with activity id and ticket id
+
+    def test_checkIn_2(self):
+        res = self.cl.post('/api/a/activity/checkin', {'actId': act_published['id'], 'studentId': ticket_valid['student_id']})
+        res_content = res.content.decode('utf-8')
+        self.assertEqual(json.loads(res_content)['code'], 0)
+        self.assertEqual(json.loads(res_content)['data']['ticket'], ticket_valid['unique_id'])
+        # try to check in with activity id and student id
+
+    def test_checkIn_3(self):
+        res = self.cl.post('/api/a/activity/checkin', {'actId': act_published['id'], 'ticket': '', 'studentId': ''})
+        res_content = res.content.decode('utf-8')
+        self.assertNotEqual(json.loads(res_content)['code'], 0)
+        # try to check in only with activity id
+
+    def test_checkIn_4(self):
+        res = self.cl.post('/api/a/activity/checkin', {'actId': -1, 'ticket': '', 'studentId': ticket_valid['student_id']})
+        res_content = res.content.decode('utf-8')
+        self.assertNotEqual(json.loads(res_content)['code'], 0)
+        # try to check in with non-existent activity id and ticket id
