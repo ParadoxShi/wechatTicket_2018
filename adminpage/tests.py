@@ -20,14 +20,14 @@ act_published = {"id": 1,
                  "key": 'key1',
                  "place": 'hall',
                  "description": 'description',
-                 "startTime": timezone.now() + timedelta(1000),
-                 "endTime": timezone.now() + timedelta(2000),
-                 "bookStart": timezone.now() - timedelta(500),
-                 "bookEnd": timezone.now() + timedelta(500),
-                 "totalTickets": 1000,
+                 "start_time": timezone.now() + timedelta(1000),
+                 "end_time": timezone.now() + timedelta(2000),
+                 "book_start": timezone.now() - timedelta(500),
+                 "book_end": timezone.now() + timedelta(500),
+                 "total_tickets": 1000,
                  "status": Activity.STATUS_PUBLISHED,
-                 "remainTickets": 1000,
-                 "picUrl": "test_url"
+                 "remain_tickets": 1000,
+                 "pic_url": "test_url"
 }
 
 act_saved = {"id": 2,
@@ -35,14 +35,14 @@ act_saved = {"id": 2,
              "key": 'key2',
              "place": 'hell',
              "description": 'description',
-             "startTime": timezone.now() + timedelta(1000),
-             "endTime": timezone.now() + timedelta(2000),
-             "bookStart": timezone.now() - timedelta(500),
-             "bookEnd": timezone.now() + timedelta(500),
-             "totalTickets": 1000,
+             "start_time": timezone.now() + timedelta(1000),
+             "end_time": timezone.now() + timedelta(2000),
+             "book_start": timezone.now() - timedelta(500),
+             "book_end": timezone.now() + timedelta(500),
+             "total_tickets": 1000,
              "status": Activity.STATUS_SAVED,
-             "remainTickets": 1000,
-             "picUrl": "test_url"
+             "remain_tickets": 1000,
+             "pic_url": "test_url"
 }
 
 act_deleted = {"id": 3,
@@ -50,14 +50,14 @@ act_deleted = {"id": 3,
                "key": 'key3',
                "place": 'hall',
                "description": 'description',
-               "startTime": timezone.now() + timedelta(1000),
-               "endTime": timezone.now() + timedelta(2000),
-               "bookStart": timezone.now() - timedelta(500),
-               "bookEnd": timezone.now() + timedelta(500),
-               "totalTickets": 1000,
+               "start_time": timezone.now() + timedelta(1000),
+               "end_time": timezone.now() + timedelta(2000),
+               "book_start": timezone.now() - timedelta(500),
+               "book_end": timezone.now() + timedelta(500),
+               "total_tickets": 1000,
                "status": Activity.STATUS_DELETED,
-               "remainTickets": 1000,
-               "picUrl": "test_url"
+               "remain_tickets": 1000,
+               "pic_url": "test_url"
 }
 
 act_changed_detail = {
@@ -65,11 +65,30 @@ act_changed_detail = {
                "key": 'key4',
                "place": '东主楼',
                "description": '这是修改后的描述',
-               "totalTickets": 500,
+               "total_tickets": 500,
                "status": Activity.STATUS_SAVED,
-               "remainTickets": 30,
-               "picUrl": "test_url"
+               "remain_tickets": 30,
+               "pic_url": "test_url"
 }
+
+
+def activity_liquid(act):
+    liquid ={
+        "id": act['id'],
+        "name": act['name'],
+        "key": act['key'],
+        "place": act['place'],
+        "description": act['description'],
+        "startTime": act['start_time'],
+        "endTime": act['start_time'],
+        "bookStart": act['start_time'],
+        "bookEnd": act['start_time'],
+        "totalTickets": act['total_ticket'],
+        "status": act['status'],
+        "remainTickets": act['remain_tickets'],
+        "picUrl": act["pic_url"]
+    }
+    return liquid
 
 
 class CreateActivityTest(TestCase):
@@ -77,7 +96,7 @@ class CreateActivityTest(TestCase):
     Test For API 8
     """
     def setUp(self):
-        djangoUser.objects.create_superuser(sys_superuser['username'],sys_superuser['email'],sys_superuser['password'])
+        djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'],sys_superuser['password'])
         self.cl = Client()
         self.cl.post('/api/a/login', sys_superuser)
 
@@ -86,12 +105,12 @@ class CreateActivityTest(TestCase):
         self.cl.post('/api/a/logout', sys_superuser)
 
     def test_createPublishedActivity(self):
-        res = self.cl.post('/api/a/activity/create', act_published)
+        res = self.cl.post('/api/a/activity/create', activity_liquid(act_published))
         res_content = res.content.decode('utf-8')
         self.assertEqual(json.loads(res_content)['code'], 0)
 
     def test_createSavedActivity(self):
-        res = self.cl.post('/api/a/activity/create', act_saved)
+        res = self.cl.post('/api/a/activity/create', activity_liquid(act_saved))
         res_content = res.content.decode('utf-8')
         self.assertEqual(json.loads(res_content)['code'], 0)
 
@@ -140,7 +159,7 @@ class ActivityDetailTest(TestCase):
         copy_act.update(act_changed_detail)
         # copy_act.pop('key')
         # copy_act.pop('remainTickets')
-        res = self.cl.post('/api/a/activity/detail', copy_act)
+        res = self.cl.post('/api/a/activity/detail', activity_liquid(copy_act))
         res_content = res.content.decode('utf-8')
         self.assertEqual(json.loads(res_content)['code'], 0)
         item = Activity.objects.get(id=act_saved["id"])
