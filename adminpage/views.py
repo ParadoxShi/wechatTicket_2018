@@ -226,6 +226,7 @@ class Menu(APIView):
         except Exception as e:
             raise MySQLError('Failed to get current activities.')
         try:
+            print(activity_ids)
             activityList = []
             index = 0
             for activity in current_activities:
@@ -264,8 +265,8 @@ class Checkin(APIView):
         try:
             if 'ticket' in self.input:
                 ticket = Ticket.get_by_id(unique_id=self.input['ticket'])
-                if Ticket.status == Ticket.STATUS_VALID:
-                    Ticket.status = Ticket.STATUS_USED
+                if str(ticket.status) == Ticket.STATUS_VALID:
+                    ticket.status = Ticket.STATUS_USED
                     ticket.save()
                     res = {
                         'ticket': ticket.unique_id,
@@ -278,9 +279,9 @@ class Checkin(APIView):
                     raise CheckinError('Your ticket has been cancelled')
             elif 'studentId' in self.input:
                 tickets = Ticket.get_by_studentId(self.input['studentId'])
-                input_id = self.input['id']
+                input_id = self.input['actId']
                 for ticket in tickets:
-                    if ticket.activity.id == input_id:
+                    if str(ticket.activity.id) == input_id:
                         if ticket.status == Ticket.STATUS_VALID:
                             ticket.status = Ticket.STATUS_USED
                             ticket.save()
@@ -289,7 +290,7 @@ class Checkin(APIView):
                                 'studentId':ticket.student_id
                             }
                             return res
-                        elif Ticket.status == Ticket.STATUS_USED:
+                        elif ticket.status == Ticket.STATUS_USED:
                             raise CheckinError('Your ticket has been used')
                         else:
                             raise CheckinError('Your ticket has been cancelled')
