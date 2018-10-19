@@ -72,8 +72,12 @@ class ActivityDelete(APIView):
         self.check_input('id')
         try:
             activity_to_be_deleted = Activity.objects.get(id=self.input['id'])
+            tickets_to_be_cancelled = Ticket.objects.filter(activity=activity_to_be_deleted)
             activity_to_be_deleted.status = Activity.STATUS_DELETED
             activity_to_be_deleted.save()
+            for ticket in tickets_to_be_cancelled:
+                ticket.status = Ticket.STATUS_CANCELLED
+                ticket.save()
         except Activity.DoesNotExist:
             raise ValidateError('The activity to be deleted does not exist.')
 
@@ -192,11 +196,7 @@ class ActivityDetail(APIView):
 class Menu(APIView):
 
     def get_current_menu_ids(self):
-        '''
-        Copy From wechat/view.py
-        :param
-        :return: ids
-        '''
+
         try:
             current_menu = CustomWeChatView.lib.get_wechat_menu()
             existed_buttons = list()
@@ -226,6 +226,7 @@ class Menu(APIView):
         except Exception as e:
             raise MySQLError('Failed to get current activities.')
         try:
+            print(activity_ids)
             activityList = []
             index = 0
             for activity in current_activities:
@@ -263,23 +264,37 @@ class Checkin(APIView):
             raise ValidateError('You need to login first.')
         try:
             if 'ticket' in self.input:
-                ticket = Ticket.get_by_id(self.input['ticket'])
-                res = {
-                    'ticket': ticket.unique_id,
-                    'studentId': ticket.student_id
-                }
-                return res
+                ticket = Ticket.get_by_id(unique_id=self.input['ticket'])
+                if str(ticket.status) == Ticket.STATUS_VALID:
+                    ticket.status = Ticket.STATUS_USED
+                    ticket.save()
+                    res = {
+                        'ticket': ticket.unique_id,
+                        'studentId': ticket.student_id
+                    }
+                    return res
+                elif Ticket.status == Ticket.STATUS_USED:
+                    raise CheckinError('Your ticket has been used')
+                else:
+                    raise CheckinError('Your ticket has been cancelled')
             elif 'studentId' in self.input:
                 tickets = Ticket.get_by_studentId(self.input['studentId'])
-                input_id = self.input['id']
+                input_id = self.input['actId']
                 for ticket in tickets:
-                    if ticket.activity.id == input_id:
-                        res = {
-                            'ticket': ticket.unique_id,
-                            'studentId':ticket.student_id
-                        }
-                        return res
-                raise MySQLError('Find ticket failed!')
+                    if str(ticket.activity.id) == input_id:
+                        if ticket.status == Ticket.STATUS_VALID:
+                            ticket.status = Ticket.STATUS_USED
+                            ticket.save()
+                            res = {
+                                'ticket': ticket.unique_id,
+                                'studentId':ticket.student_id
+                            }
+                            return res
+                        elif ticket.status == Ticket.STATUS_USED:
+                            raise CheckinError('Your ticket has been used')
+                        else:
+                            raise CheckinError('Your ticket has been cancelled')
+                raise CheckinError("Can't find the ticket!")
             else:
                 raise ValidateError('You need to input your ticketId or studentId.')
         except Exception as e:

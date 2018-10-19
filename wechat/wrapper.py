@@ -26,7 +26,7 @@ class WeChatHandler(object):
     def __init__(self, view, msg, user):
         """
         :type view: WeChatView
-        :type msg: dict
+        :type msg: dict4
         :type user: User or None
         """
         self.input = msg
@@ -53,7 +53,7 @@ class WeChatHandler(object):
 
     def reply_news(self, articles):
         if len(articles) > 10:
-            self.logger.warn('Reply with %d articles, keep only 10', len(articles))
+            self.logger.warning('Reply with %d articles, keep only 10', len(articles))
         return get_template('news.xml').render(self.get_context(
             Articles=articles[:10]
         ))

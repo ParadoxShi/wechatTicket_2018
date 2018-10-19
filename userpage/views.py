@@ -15,7 +15,6 @@ class UserBind(APIView):
         input: self.input['student_id'] and self.input['password']
         raise: ValidateError when validating failed
         """
-        # 貌似暂时不需要实现这玩意了
         if False:
             raise ValidateError('Student ID or password incorrect!')
         if len(User.objects.filter(student_id=self.input['student_id'])) > 0:
@@ -23,12 +22,12 @@ class UserBind(APIView):
 
 
     def get(self):
-        print('here')
         self.check_input('openid')
+        print("bind-get")
         return User.get_by_openid(self.input['openid']).student_id
 
     def post(self):
-        print('here')
+        print("bind-post")
         self.check_input('openid', 'student_id', 'password')
         user = User.get_by_openid(self.input['openid'])
         self.validate_user()
@@ -66,5 +65,5 @@ class TicketView(APIView):
         user = User.get_by_openid(self.input['openid'])
         student_id = user.student_id
         detail = Ticket.get_a_ticket(student_id, self.input['ticket'])
-        detail['currentTime'] = datetime.datetime().now().timestamp()
+        detail['currentTime'] = datetime.datetime.now().timestamp()
         return detail
