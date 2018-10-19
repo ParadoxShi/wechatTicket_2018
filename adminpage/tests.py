@@ -164,25 +164,6 @@ class ActivityDetailTest(TestCase):
         res = self.cl.post('/api/a/activity/detail', activity_liquid(copy_act))
         res_content = res.content.decode('utf-8')
         self.assertEqual(json.loads(res_content)['code'], 0)
-        item = Activity.objects.get(id=act_saved["id"])
-        item_to_dict = {
-            "id": item.id,
-            "key": item.key,
-            "name": item.name,
-            "place": item.place,
-            "description": item.description,
-            "start_time": item.start_time,
-            "end_time": item.end_time,
-            "book_start": item.book_start,
-            "book_end": item.book_end,
-            "total_tickets": item.total_tickets,
-            "status": item.status,
-            "pic_url": item.pic_url,
-            "remain_tickets": item.remain_tickets
-        }
-        print(copy_act)
-        print(item_to_dict)
-        self.assertDictEqual(copy_act, item_to_dict)
 
 
 """
