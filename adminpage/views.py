@@ -134,11 +134,11 @@ class ActivityDetail(APIView):
             item['name'] = activity.name
             item['key'] = activity.key
             item['description'] = activity.description
-            item['startTime'] = activity.start_time.timestamp()
-            item['endTime'] = activity.end_time.timestamp()
+            item['startTime'] = int(activity.start_time.timestamp())
+            item['endTime'] = int(activity.end_time.timestamp())
             item['place'] = activity.place
-            item['bookStart'] = activity.book_start.timestamp()
-            item['bookEnd'] = activity.book_end.timestamp()
+            item['bookStart'] = int(activity.book_start.timestamp())
+            item['bookEnd'] = int(activity.book_end.timestamp())
             item['totalTickets'] = activity.total_tickets
             if activity.status == Activity.STATUS_PUBLISHED:
                 item['status'] = 1
@@ -146,7 +146,7 @@ class ActivityDetail(APIView):
                 item['status'] = 0
             item['picUrl'] = activity.pic_url
 
-            item['currentTime'] = datetime.datetime.now().timestamp()
+            item['currentTime'] = int(datetime.datetime.now().timestamp())
             item['bookedTickets'] = activity.total_tickets - activity.remain_tickets
             item['usedTickets'] = Ticket.objects.filter(activity_id=activity.id, status=Ticket.STATUS_USED).count()
             return item
