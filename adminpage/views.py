@@ -14,9 +14,6 @@ import time
 
 
 class Login(APIView):
-    """
-    API 4
-    """
 
     def get(self):
         if not self.request.user.is_authenticated():
@@ -34,9 +31,6 @@ class Login(APIView):
 
 
 class LogOut(APIView):
-    """
-    API 5
-    """
 
     def post(self):
         if not self.request.user.is_authenticated():
@@ -49,9 +43,6 @@ class LogOut(APIView):
 
 
 class ActivityList(APIView):
-    """
-    API 6
-    """
 
     def get(self):
         if self.request.user.is_authenticated():
@@ -81,9 +72,6 @@ class ActivityList(APIView):
 
 
 class ActivityDelete(APIView):
-    """
-    API 7
-    """
 
     def post(self):
         self.check_input('id')
@@ -91,14 +79,11 @@ class ActivityDelete(APIView):
             activity_to_be_deleted = Activity.objects.get(id=self.input['id'])
             activity_to_be_deleted.status = Activity.STATUS_DELETED
             activity_to_be_deleted.save()
+        except Activity.DoesNotExist:
             raise ValidateError('The activity to be deleted does not exist.')
 
 
 class ActivityCreate(APIView):
-    """
-    API 8
-    """
-
     def post(self):
         if not self.request.user.is_authenticated():
             raise ValidateError('You need to login first.')
@@ -123,10 +108,6 @@ class ActivityCreate(APIView):
 
 
 class ImageUpload(APIView):
-    """
-    API 9
-    """
-
     def post(self):
         if not self.request.user.is_authenticated():
             raise ValidateError('You need to login first.')
@@ -144,9 +125,6 @@ class ImageUpload(APIView):
 
 
 class ActivityDetail(APIView):
-    """
-    API 10
-    """
 
     def get(self):
         if not self.request.user.is_authenticated():
@@ -192,50 +170,38 @@ class ActivityDetail(APIView):
                 activity.place = self.input['place']
             activity.description = self.input['description']
             activity.pic_url = self.input['picUrl']
+            current_time = datetime.datetime.now().timestamp()
 
-            start_Time = self.input['startTime'].timestamp()
-            end_Time = self.input['endTime'].timestamp()
-            book_Start = self.input['bookStart'].timestamp()
-            book_End = self.input['bookEnd'].timestamp()
-            current_Time = datetime.datetime.now().timestamp()
-            # use xxxx_Xxxx to compare time
-            if start_Time >= end_Time:
-                raise LogicError('Activity end time should be later than activity start time.')
-            if book_Start >= book_End:
-                raise LogicError('Book end time should be later than book start time.')
-            if book_End >= end_Time:
-                raise LogicError('Activity end time should be later than book end time.')
-            if current_Time > end_Time and activity.start_time != self.input['startTime']:
-                raise LogicError('Activity start time can not be changed after the activity ends.')
-            if current_Time > end_Time and activity.end_time != self.input['endTime']:
-                raise LogicError('Activity end time can not be changed after the activity ends.')
-            if activity.status is Activity.STATUS_PUBLISHED and activity.book_start != self.input['bookStart']:
-                raise LogicError('Book start time can not be changed after the activity publishes.')
-            if current_Time > start_Time and activity.book_end != self.input['bookEnd']:
-                raise LogicError('Book end time can not be changed after the activity starts.')
-            if current_Time > book_Start and activity.total_tickets != self.input['totalTickets']:
-                raise LogicError('Total tickets can not be changed after the book starts.')
-            if activity.status is Activity.STATUS_PUBLISHED and activity.status != self.input['status']:
-                raise LogicError('Activity status can not be changed after the activity publishes.')
-            
-            activity.start_time = self.input['startTime']
-            activity.end_time = self.input['endTime']
-            activity.book_start = self.input['bookStart']
-            activity.book_end = self.input['bookEnd']
-            activity.total_tickets = self.input['totalTickets']
-            activity.status = self.input['status']
+            # 这一段的顺序比较重要，牵涉到数据库date对象和str对象的转换
+
+            if current_time < activity.start_time.timestamp():
+                activity.book_end = self.input['bookEnd']
+
+            if current_time < activity.end_time.timestamp():
+                activity.start_time = self.input['startTime']
+                activity.end_time = self.input['endTime']
+
+            if current_time < activity.book_start.timestamp():
+                activity.total_tickets = self.input['totalTickets']
+
+            if activity.status is not Activity.STATUS_SAVED:
+                activity.book_start = self.input['bookStart']
+
+            if activity.status is not Activity.STATUS_PUBLISHED:
+                activity.status = self.input['status']
             activity.save()
         except Exception as e:
             raise MySQLError('Change activity detail failed!')
 
 
 class Menu(APIView):
-    """
-    API 11
-    """
 
     def get_current_menu_ids(self):
-
+        '''
+        Copy From wechat/view.py
+        :param
+        :return: ids
+        '''
         try:
             current_menu = CustomWeChatView.lib.get_wechat_menu()
             existed_buttons = list()
@@ -265,7 +231,6 @@ class Menu(APIView):
         except Exception as e:
             raise MySQLError('Failed to get current activities.')
         try:
-            print(activity_ids)
             activityList = []
             index = 0
             for activity in current_activities:
@@ -297,57 +262,29 @@ class Menu(APIView):
 
 
 class Checkin(APIView):
-    """
-    API 12
-    """
 
     def post(self):
         if not self.request.user.is_authenticated():
             raise ValidateError('You need to login first.')
         try:
             if 'ticket' in self.input:
-                ticket = Ticket.get_by_id(unique_id=self.input['ticket'])
-                if str(ticket.status) == Ticket.STATUS_VALID:
-                    ticket.status = Ticket.STATUS_USED
-                    ticket.save()
-                    res = {
-                        'ticket': ticket.unique_id,
-                        'studentId': ticket.student_id
-                    }
-                    return res
-                elif Ticket.status == Ticket.STATUS_USED:
-                    raise CheckinError('Your ticket has been used')
-                else:
-                    raise CheckinError('Your ticket has been cancelled')
+                ticket = Ticket.get_by_id(self.input['ticket'])
+                res = {
+                    'ticket': ticket.unique_id,
+                    'studentId': ticket.student_id
+                }
+                return res
             elif 'studentId' in self.input:
                 tickets = Ticket.get_by_studentId(self.input['studentId'])
-                input_id = self.input['actId']
+                input_id = self.input['id']
                 for ticket in tickets:
-                    if str(ticket.activity.id) == input_id:
-                        if ticket.status == Ticket.STATUS_VALID:
-                            start_Time = ticket.activity.start_time
-                            end_Time = ticket.activity.end_time
-                            start_Time.timestamp()
-                            end_Time.timestamp()
-                            current_Time = datetime.datetime.now().timestamp()
-                            # use xxxx_Xxxx to compare time
-                            if current_Time < start_Time:
-                                raise CheckinError('The activity has not started.')
-                            if current_Time > end_Time:
-                                raise CheckinError('The activity has already ended.')
-
-                            ticket.status = Ticket.STATUS_USED
-                            ticket.save()
-                            res = {
-                                'ticket': ticket.unique_id,
-                                'studentId':ticket.student_id
-                            }
-                            return res
-                        elif ticket.status == Ticket.STATUS_USED:
-                            raise CheckinError('Your ticket has been used')
-                        else:
-                            raise CheckinError('Your ticket has been cancelled')
-                raise CheckinError("Can't find the ticket!")
+                    if ticket.activity.id == input_id:
+                        res = {
+                            'ticket': ticket.unique_id,
+                            'studentId':ticket.student_id
+                        }
+                        return res
+                raise MySQLError('Find ticket failed!')
             else:
                 raise ValidateError('You need to input your ticketId or studentId.')
         except Exception as e:

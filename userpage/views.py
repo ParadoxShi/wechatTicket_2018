@@ -9,15 +9,13 @@ import datetime
 
 
 class UserBind(APIView):
-    """
-    API 1
-    """
 
     def validate_user(self):
         """
         input: self.input['student_id'] and self.input['password']
         raise: ValidateError when validating failed
         """
+        # 貌似暂时不需要实现这玩意了
         if False:
             raise ValidateError('Student ID or password incorrect!')
         if len(User.objects.filter(student_id=self.input['student_id'])) > 0:
@@ -25,14 +23,9 @@ class UserBind(APIView):
 
     def get(self):
         self.check_input('openid')
-        print("bind-get")
         return User.get_by_openid(self.input['openid']).student_id
 
     def post(self):
-<<<<<<< HEAD
-=======
-        print("bind-post")
->>>>>>> zy_trial-for-api-changes
         self.check_input('openid', 'student_id', 'password')
         user = User.get_by_openid(self.input['openid'])
         self.validate_user()
@@ -41,10 +34,6 @@ class UserBind(APIView):
 
 
 class ActivityView(APIView):
-    """
-    API 2
-    """
-
     def get(self):
         self.check_input('id')
         item = Activity.get_by_id(self.input['id'])
@@ -69,10 +58,6 @@ class ActivityView(APIView):
 
 
 class TicketView(APIView):
-    """
-    API 3
-    """
-
     def get(self):
         self.check_input('openid', 'ticket')
         user = User.get_by_openid(self.input['openid'])
