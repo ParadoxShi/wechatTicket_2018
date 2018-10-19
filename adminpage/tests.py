@@ -52,8 +52,8 @@ act_deleted = {"id": 3,
                "description": 'description',
                "start_time": timezone.now() + timedelta(1000),
                "end_time": timezone.now() + timedelta(2000),
-               "book_start": timezone.now() - timedelta(500),
-               "book_end": timezone.now() + timedelta(500),
+               "book_start": timezone.now() + timedelta(500),
+               "book_end": timezone.now() + timedelta(800),
                "total_tickets": 1000,
                "status": Activity.STATUS_DELETED,
                "remain_tickets": 1000,
@@ -62,13 +62,15 @@ act_deleted = {"id": 3,
 
 act_changed_detail = {
                "name": 'changed',
-               "key": 'key4',
-               "place": '东主楼',
-               "description": '这是修改后的描述',
+               "place": 'East Hall',
+               "description": 'This is a new description.',
                "total_tickets": 500,
                "status": Activity.STATUS_SAVED,
-               "remain_tickets": 30,
-               "pic_url": "test_url"
+               "pic_url": "test_url",
+               "start_time": timezone.now() + timedelta(1000),
+               "end_time": timezone.now() + timedelta(2000),
+               "book_start": timezone.now() + timedelta(500),
+               "book_end": timezone.now() + timedelta(800),
 }
 
 
@@ -96,7 +98,7 @@ class CreateActivityTest(TestCase):
     Test For API 8
     """
     def setUp(self):
-        djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'],sys_superuser['password'])
+        djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'], sys_superuser['password'])
         self.cl = Client()
         self.cl.post('/api/a/login', sys_superuser)
 
