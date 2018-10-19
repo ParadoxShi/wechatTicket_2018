@@ -92,7 +92,7 @@ class ActivityCreate(APIView):
             item = Activity.objects.create(name=self.input['name'],
                                            key=self.input['key'],
                                            place=self.input['place'],
-                                           description=self.input['name'],
+                                           description=self.input['description'],
                                            pic_url=self.input['picUrl'],
                                            start_time=self.input['startTime'],
                                            end_time=self.input['endTime'],
