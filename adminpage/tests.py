@@ -12,11 +12,13 @@ from adminpage.views import *
 # Success code == 0
 # Validate Error code == 3
 
+
 sys_superuser = {
     "username": "superuser",
     "email": '',
     "password": 'password'
 }
+
 superUserForTest = {'username': 'administrator',
                     'email': 'benjo@youknowthereisnotthiswebsite.com',
                     'password': 'guest2000'}
@@ -152,6 +154,7 @@ act_changed_detail = {
 
 
 def activity_liquid(act):
+
     liquid = {
         "id": act['id'],
         "name": act['name'],
@@ -214,6 +217,7 @@ class ActivityDeleteTest(TestCase):
 
     def tearDown(self):
         pass
+
 
 
 class CreateActivityTest(TestCase):
