@@ -6,7 +6,7 @@ from WeChatTicket import settings
 from django.db import transaction
 import random
 import uuid
-
+import datetime
 
 __author__ = "Epsirom"
 
@@ -125,6 +125,17 @@ class BookTicketHandler(WeChatHandler):
         if len(activity_list) == 0:
             transaction.rollback(sid)
             return self.reply_text('没有记录！')
+
+        current_time = datetime.datetime.now().timestamp()
+        if current_time < activity_list[0].book_start.timestamp() \
+            or current_time > activity_list[0].book_end.timestamp():
+            transaction.rollback(sid)
+            return self.reply_text('现在不是抢票时间')
+
+        owned_tickets = Ticket.objects.filter(student_id=self.user.student_id, activity__key=activity_key)
+        effective_tickets = [x for x in owned_tickets if x.status != Ticket.STATUS_CANCELLED]
+        if len(effective_tickets) > 0:
+            return self.reply_text('您已经订过票了。')
 
         remain_count = activity_list[0].remain_tickets
         if remain_count > 0:
