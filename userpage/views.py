@@ -65,3 +65,5 @@ class TicketView(APIView):
         detail = Ticket.get_a_ticket(student_id, self.input['ticket'])
         detail['currentTime'] = int(datetime.datetime.now().timestamp())
         return detail
+
+

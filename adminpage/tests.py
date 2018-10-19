@@ -6,14 +6,93 @@ import json
 from datetime import timedelta
 from django.utils import timezone
 import os
+from adminpage.views import *
 
-# Create your tests here.
+# Mentions:
+# Success code == 0
+# Validate Error code == 3
+
 
 sys_superuser = {
     "username": "superuser",
     "email": '',
     "password": 'password'
 }
+
+superUserForTest = {'username': 'administrator',
+                    'email': 'benjo@youknowthereisnotthiswebsite.com',
+                    'password': 'guest2000'}
+wrongUser1 = {
+    'username': 'bdripistraitor',
+    'email': 'benjo@youknowthereisnotthiswebsite.com',
+    'password': 'guest2000'
+}
+wrongUser2 = {
+    'username': 'administrator',
+    'email': 'benjo@youknowthereisnotthiswebsite.com',
+    'password': 'prisoner9527'
+}
+
+
+## API 4 ##
+class LoginTest(TestCase):
+    def setUp(self):
+        djangoUser.objects.create_superuser(superUserForTest['username'],
+                                            superUserForTest['email'],
+                                            superUserForTest['password'])
+
+    def test_hasnot_login(self):
+        rep = self.client.get('/api/a/login/')
+        repObj = json.loads(rep.content.decode('utf-8'))
+        self.assertEqual(repObj['code'], 3)
+
+    def test_log_in(self):
+        rep = self.client.post('/api/a/login/', superUserForTest)
+        self.assertEqual(rep.status_code, 200)
+        repObj = json.loads(rep.content.decode('utf-8'))
+        self.assertEqual(repObj['code'], 0)
+
+    def test_has_login(self):
+        self.client.post('/api/a/login/', superUserForTest)
+        rep = self.client.get('/api/a/login/')
+        repObj = json.loads(rep.content.decode('utf-8'))
+        self.assertEqual(repObj['code'], 0)
+
+    def test_failed_usr(self):
+        rep = self.client.post('/api/a/login/', wrongUser1)
+        repObj = json.loads(rep.content.decode('utf-8'))
+        self.assertEqual(repObj['code'], 3)
+
+    def test_failed_pwd(self):
+        rep2 = self.client.post('/api/a/login/', wrongUser2)
+        repObj2 = json.loads(rep2.content.decode('utf-8'))
+        self.assertEqual(repObj2['code'], 3)
+
+    def tearDown(self):
+        pass
+
+
+## API 5 ##
+class LogOutTest(TestCase):
+    def setUp(self):
+        djangoUser.objects.create_superuser(superUserForTest['username'],
+                                            superUserForTest['email'],
+                                            superUserForTest['password'])
+
+    def test_log_out(self):
+        self.client.post('/api/a/login/', superUserForTest)
+        rep = self.client.post('/api/a/logout/', superUserForTest)
+        repObj = json.loads(rep.content.decode('utf-8'))
+        self.assertEqual(repObj['code'], 0)
+
+    def test_failed_not_logged_in(self):
+        rep = self.client.post('/api/a/logout/', superUserForTest)
+        repObj = json.loads(rep.content.decode('utf-8'))
+        self.assertEqual(repObj['code'], 3)
+
+    def tearDown(self):
+        pass
+
 
 act_published = {"id": 1,
                  "name": 'published',
@@ -75,7 +154,8 @@ act_changed_detail = {
 
 
 def activity_liquid(act):
-    liquid ={
+
+    liquid = {
         "id": act['id'],
         "name": act['name'],
         "key": act['key'],
@@ -91,6 +171,53 @@ def activity_liquid(act):
         "picUrl": act["pic_url"]
     }
     return liquid
+
+
+## API 6 ##
+class ActivityListTest(TestCase):
+    def setUp(self):
+        djangoUser.objects.create_superuser(superUserForTest['username'],
+                                            superUserForTest['email'],
+                                            superUserForTest['password'])
+        Activity(**act_saved).save()
+        Activity(**act_published).save()
+        Activity(**act_deleted).save()
+
+    def test_get_list(self):
+        self.client.post('/api/a/login/', superUserForTest)
+        rep = self.client.get('/api/a/activity/list/')
+        repObj = json.loads(rep.content.decode('utf-8'))
+        self.assertEqual(repObj['code'], 0)
+        self.assertEqual(len(repObj['data']), 2)
+
+    def test_failed_not_logged_in(self):
+        rep = self.client.get('/api/a/activity/list/')
+        repObj = json.loads(rep.content.decode('utf-8'))
+        self.assertEqual(repObj['code'], 3)
+
+    def tearDown(self):
+        pass
+
+
+## API 7 ##
+class ActivityDeleteTest(TestCase):
+    def setUp(self):
+        djangoUser.objects.create_superuser(superUserForTest['username'],
+                                            superUserForTest['email'],
+                                            superUserForTest['password'])
+        Activity(**act_saved).save()
+        Activity(**act_published).save()
+        Activity(**act_deleted).save()
+
+    def test_del_activity(self):
+        self.client.post('/api/a/login/', superUserForTest)
+        rep = self.client.post('/api/a/activity/delete/', {'id': act_saved['id']})
+        repObj = json.loads(rep.content.decode('utf-8'))
+        self.assertEqual(repObj['code'], 0)
+
+    def tearDown(self):
+        pass
+
 
 
 class CreateActivityTest(TestCase):
