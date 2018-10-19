@@ -3,6 +3,7 @@
 from wechat.wrapper import WeChatHandler, WeChatLib
 from wechat.models import Activity, Ticket
 from WeChatTicket import settings
+from django.db import transaction
 import random
 import uuid
 import datetime
@@ -99,31 +100,45 @@ class BookTicketHandler(WeChatHandler):
             flag = True
         return flag
 
+    @transaction.atomic
     def handle(self):
         if not self.user.student_id:
             return self.reply_text(self.get_message('bind_account'))
-        activity_list = []
-        if self.entry_type == 1:
-            activity_key = self.input['Content'][3:]
-            activity_list = Activity.objects.filter(key=activity_key)
-        elif self.entry_type == 2:
-            activity_id = self.input['EventKey'][len(self.view.event_keys['book_header']):]
-            activity_list = Activity.objects.filter(id=activity_id)
-            activity_key = activity_list[0].key
+
+        entry_type = self.entry_type
+        self_input = self.input
+
+        sid = transaction.savepoint()
+
+        try:
+            if entry_type == 1:
+                activity_key = self_input['Content'][3:]
+                activity_list = Activity.objects.select_for_update().filter(key=activity_key)
+            elif entry_type == 2:
+                activity_id = self_input['EventKey'][len(self.view.event_keys['book_header']):]
+                activity_list = Activity.objects.select_for_update().filter(id=activity_id)
+                activity_key = activity_list[0].key
+        except:
+            transaction.rollback(sid)
+            return self.reply_text('订票信息错误')
 
         if len(activity_list) == 0:
+            transaction.rollback(sid)
             return self.reply_text('没有记录！')
 
         current_time = datetime.datetime.now().timestamp()
-        if current_time < activity_list[0].book_start.timestamp() or current_time > activity_list[0].book_end.timestamp():
+        if current_time < activity_list[0].book_start.timestamp() \
+            or current_time > activity_list[0].book_end.timestamp():
+            transaction.rollback(sid)
             return self.reply_text('现在不是抢票时间')
+
+        owned_tickets = Ticket.objects.filter(student_id=self.user.student_id, activity__key=activity_key)
+        effective_tickets = [x for x in owned_tickets if x.status != Ticket.STATUS_CANCELLED]
+        if len(effective_tickets) > 0:
+            return self.reply_text('您已经订过票了。')
 
         remain_count = activity_list[0].remain_tickets
         if remain_count > 0:
-            owned_tickets = Ticket.objects.filter(student_id=self.user.student_id, activity__key=activity_key)
-            effective_tickets = [x for x in owned_tickets if x.status != Ticket.STATUS_CANCELLED]
-            if len(effective_tickets) > 0:
-                return self.reply_text('您已经订过票了。')
             if len(owned_tickets) > 0:
                 owned_tickets[0].status = Ticket.STATUS_VALID
                 owned_tickets[0].save()
@@ -136,6 +151,7 @@ class BookTicketHandler(WeChatHandler):
                 )
             activity_list[0].remain_tickets -= 1
             activity_list[0].save()
+            transaction.commit()
             return self.reply_text('成功！')
         else:
             return self.reply_text('票已抢完。')
