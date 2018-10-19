@@ -50,3 +50,48 @@ class FileError(BaseError):
 class MenuError(BaseError):
     def __init__(self, msg):
         super(MenuError, self).__init__(6, msg)
+
+
+class LogicError1(BaseError):
+    def __init__(self, msg):
+        super(LogicError, self).__init__(101, msg)
+
+
+class LogicError2(BaseError):
+    def __init__(self, msg):
+        super(LogicError, self).__init__(102, msg)
+
+
+class LogicError3(BaseError):
+    def __init__(self, msg):
+        super(LogicError, self).__init__(103, msg)
+
+
+class LogicError4(BaseError):
+    def __init__(self, msg):
+        super(LogicError, self).__init__(104, msg)
+
+
+class LogicError5(BaseError):
+    def __init__(self, msg):
+        super(LogicError, self).__init__(105, msg)
+
+
+class LogicError6(BaseError):
+    def __init__(self, msg):
+        super(LogicError, self).__init__(106, msg)
+
+
+class LogicError7(BaseError):
+    def __init__(self, msg):
+        super(LogicError, self).__init__(107, msg)
+
+
+class LogicError8(BaseError):
+    def __init__(self, msg):
+        super(LogicError, self).__init__(108, msg)
+
+
+class LogicError9(BaseError):
+    def __init__(self, msg):
+        super(LogicError, self).__init__(109, msg)
