@@ -21,6 +21,7 @@ class UserBind(APIView):
         if len(User.objects.filter(student_id=self.input['student_id'])) > 0:
             raise ValidateError('You are already in')
 
+
     def get(self):
         print('here')
         self.check_input('openid')
