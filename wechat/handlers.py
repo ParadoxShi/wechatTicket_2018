@@ -5,7 +5,7 @@ from wechat.models import Activity, Ticket
 from WeChatTicket import settings
 import random
 import uuid
-
+import datetime
 
 __author__ = "Epsirom"
 
@@ -113,6 +113,10 @@ class BookTicketHandler(WeChatHandler):
 
         if len(activity_list) == 0:
             return self.reply_text('没有记录！')
+
+        current_time = datetime.datetime.now().timestamp()
+        if current_time < activity_list[0].book_start.timestamp() or current_time > activity_list[0].book_end.timestamp():
+            return self.reply_text('现在不是抢票时间')
 
         remain_count = activity_list[0].remain_tickets
         if remain_count > 0:
