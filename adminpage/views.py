@@ -230,14 +230,14 @@ class ActivityDetail(APIView):
                 raise LogicError('Activity start time can not be changed after the activity ends.')
             if current_Time > end_Time and activity.end_time != self.input['endTime']:
                 raise LogicError('Activity end time can not be changed after the activity ends.')
-            if current_Time > start_Time and activity.book_start != self.input['bookStart']:
-                raise LogicError('Book start time can not be changed after the activity starts.')
+            if activity.status is Activity.STATUS_PUBLISHED and activity.book_start != self.input['bookStart']:
+                raise LogicError('Book start time can not be changed after the activity publishes.')
             if current_Time > start_Time and activity.book_end != self.input['bookEnd']:
                 raise LogicError('Book end time can not be changed after the activity starts.')
             if current_Time > book_Start and activity.total_tickets != self.input['totalTickets']:
                 raise LogicError('Total tickets can not be changed after the book starts.')
             if activity.status is Activity.STATUS_PUBLISHED and activity.status != self.input['status']
-                raise LogicError('Activity status can not be changed when the activity is published.')
+                raise LogicError('Activity status can not be changed after the activity publishes.')
             
             activity.start_time = self.input['startTime']
             activity.end_time = self.input['endTime']
@@ -246,11 +246,6 @@ class ActivityDetail(APIView):
             activity.total_tickets = self.input['totalTickets']
             activity.status = self.input['status']
             activity.save()
-
-            if current_Time < book_Start:
-                # ?
-            elif current_Time < start_Time:
-                # make all tickets for this activity valid ?
         except Exception as e:
             raise MySQLError('Change activity detail failed!')
 
