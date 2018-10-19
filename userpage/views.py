@@ -9,6 +9,9 @@ import datetime
 
 
 class UserBind(APIView):
+    """
+    API 1
+    """
 
     def validate_user(self):
         """
@@ -36,6 +39,10 @@ class UserBind(APIView):
 
 
 class ActivityView(APIView):
+    """
+    API 2
+    """
+
     def get(self):
         self.check_input('id')
         item = Activity.get_by_id(self.input['id'])
@@ -60,6 +67,10 @@ class ActivityView(APIView):
 
 
 class TicketView(APIView):
+    """
+    API 3
+    """
+
     def get(self):
         self.check_input('openid', 'ticket')
         user = User.get_by_openid(self.input['openid'])

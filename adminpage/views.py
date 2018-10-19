@@ -14,6 +14,9 @@ import time
 
 
 class Login(APIView):
+    """
+    API 4
+    """
 
     def get(self):
         if not self.request.user.is_authenticated():
@@ -29,6 +32,9 @@ class Login(APIView):
 
 
 class LogOut(APIView):
+    """
+    API 5
+    """
 
     def post(self):
         try:
@@ -38,6 +44,9 @@ class LogOut(APIView):
 
 
 class ActivityList(APIView):
+    """
+    API 6
+    """
 
     def get(self):
         if self.request.user.is_authenticated():
@@ -67,6 +76,9 @@ class ActivityList(APIView):
 
 
 class ActivityDelete(APIView):
+    """
+    API 7
+    """
 
     def post(self):
         self.check_input('id')
@@ -83,10 +95,31 @@ class ActivityDelete(APIView):
 
 
 class ActivityCreate(APIView):
+    """
+    API 8
+    """
+
     def post(self):
         if not self.request.user.is_authenticated():
             raise ValidateError('You need to login first.')
         self.check_input('name', 'key', 'place', 'description', 'picUrl', 'startTime', 'endTime', 'bookStart', 'bookEnd', 'totalTickets', 'status')
+        
+        start_Time = self.input['startTime']
+        end_Time = self.input['endTime']
+        book_Start = self.input['bookStart']
+        book_End = self.input['bookEnd']
+        start_Time.timestamp()
+        end_Time.timestamp()
+        book_Start.timestamp()
+        book_End.timestamp()
+        # use xxxx_Xxxx to compare time
+        if start_Time >= end_Time:
+            raise LogicError('Activity end time should be later than activity start time.')
+        if book_Start >= book_End:
+            raise LogicError('Book end time should be later than book start time.')
+        if book_End >= end_Time:
+            raise LogicError('Activity end time should be later than book end time.')
+
         try:
             item = Activity.objects.create(name=self.input['name'],
                                            key=self.input['key'],
@@ -107,6 +140,10 @@ class ActivityCreate(APIView):
 
 
 class ImageUpload(APIView):
+    """
+    API 9
+    """
+
     def post(self):
         if not self.request.user.is_authenticated():
             raise ValidateError('You need to login first.')
@@ -124,6 +161,9 @@ class ImageUpload(APIView):
 
 
 class ActivityDetail(APIView):
+    """
+    API 10
+    """
 
     def get(self):
         if not self.request.user.is_authenticated():
@@ -169,31 +209,56 @@ class ActivityDetail(APIView):
                 activity.place = self.input['place']
             activity.description = self.input['description']
             activity.pic_url = self.input['picUrl']
-            current_time = datetime.datetime.now().timestamp()
 
-            # 这一段的顺序比较重要，牵涉到数据库date对象和str对象的转换
-
-            if current_time < activity.start_time.timestamp():
-                activity.book_end = self.input['bookEnd']
-
-            if current_time < activity.end_time.timestamp():
-                activity.start_time = self.input['startTime']
-                activity.end_time = self.input['endTime']
-
-            if current_time < activity.book_start.timestamp():
-                activity.total_tickets = self.input['totalTickets']
-
-            if activity.status is not Activity.STATUS_SAVED:
-                activity.book_start = self.input['bookStart']
-
-            if activity.status is not Activity.STATUS_PUBLISHED:
-                activity.status = self.input['status']
+            start_Time = self.input['startTime']
+            end_Time = self.input['endTime']
+            book_Start = self.input['bookStart']
+            book_End = self.input['bookEnd']
+            start_Time.timestamp()
+            end_Time.timestamp()
+            book_Start.timestamp()
+            book_End.timestamp()
+            current_Time = datetime.datetime.now().timestamp()
+            # use xxxx_Xxxx to compare time
+            if start_Time >= end_Time:
+                raise LogicError('Activity end time should be later than activity start time.')
+            if book_Start >= book_End:
+                raise LogicError('Book end time should be later than book start time.')
+            if book_End >= end_Time:
+                raise LogicError('Activity end time should be later than book end time.')
+            if current_Time > end_Time and activity.start_time != self.input['startTime']:
+                raise LogicError('Activity start time can not be changed after the activity ends.')
+            if current_Time > end_Time and activity.end_time != self.input['endTime']:
+                raise LogicError('Activity end time can not be changed after the activity ends.')
+            if current_Time > start_Time and activity.book_start != self.input['bookStart']:
+                raise LogicError('Book start time can not be changed after the activity starts.')
+            if current_Time > start_Time and activity.book_end != self.input['bookEnd']:
+                raise LogicError('Book end time can not be changed after the activity starts.')
+            if current_Time > book_Start and activity.total_tickets != self.input['totalTickets']:
+                raise LogicError('Total tickets can not be changed after the book starts.')
+            if activity.status is Activity.STATUS_PUBLISHED and activity.status != self.input['status']
+                raise LogicError('Activity status can not be changed when the activity is published.')
+            
+            activity.start_time = self.input['startTime']
+            activity.end_time = self.input['endTime']
+            activity.book_start = self.input['bookStart']
+            activity.book_end = self.input['bookEnd']
+            activity.total_tickets = self.input['totalTickets']
+            activity.status = self.input['status']
             activity.save()
+
+            if current_Time < book_Start:
+                # ?
+            elif current_Time < start_Time:
+                # make all tickets for this activity valid ?
         except Exception as e:
             raise MySQLError('Change activity detail failed!')
 
 
 class Menu(APIView):
+    """
+    API 11
+    """
 
     def get_current_menu_ids(self):
 
@@ -258,6 +323,9 @@ class Menu(APIView):
 
 
 class Checkin(APIView):
+    """
+    API 12
+    """
 
     def post(self):
         if not self.request.user.is_authenticated():
@@ -265,7 +333,18 @@ class Checkin(APIView):
         try:
             if 'ticket' in self.input:
                 ticket = Ticket.get_by_id(unique_id=self.input['ticket'])
-                if str(ticket.status) == Ticket.STATUS_VALID:
+                if str(ticket.status) == Ticket.STATUS_VALID:            
+                    start_Time = ticket.activity.start_time
+                    end_Time = ticket.activity.end_time
+                    start_Time.timestamp()
+                    end_Time.timestamp()
+                    current_Time = datetime.datetime.now().timestamp()
+                    # use xxxx_Xxxx to compare time
+                    if current_Time < start_Time:
+                        raise CheckinError('The activity has not started.')
+                    if current_Time > end_Time：
+                        raise CheckinError('The activity has already ended.')
+
                     ticket.status = Ticket.STATUS_USED
                     ticket.save()
                     res = {
@@ -283,6 +362,17 @@ class Checkin(APIView):
                 for ticket in tickets:
                     if str(ticket.activity.id) == input_id:
                         if ticket.status == Ticket.STATUS_VALID:
+                            start_Time = ticket.activity.start_time
+                            end_Time = ticket.activity.end_time
+                            start_Time.timestamp()
+                            end_Time.timestamp()
+                            current_Time = datetime.datetime.now().timestamp()
+                            # use xxxx_Xxxx to compare time
+                            if current_Time < start_Time:
+                                raise CheckinError('The activity has not started.')
+                            if current_Time > end_Time：
+                                raise CheckinError('The activity has already ended.')
+
                             ticket.status = Ticket.STATUS_USED
                             ticket.save()
                             res = {
