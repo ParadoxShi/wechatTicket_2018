@@ -125,9 +125,6 @@ class ImageUpload(APIView):
 
 
 class ActivityDetail(APIView):
-    """
-    API 10
-    """
 
     def get(self):
         if not self.request.user.is_authenticated():
@@ -142,11 +139,11 @@ class ActivityDetail(APIView):
             item['name'] = activity.name
             item['key'] = activity.key
             item['description'] = activity.description
-            item['startTime'] = activity.start_time.timestamp()
-            item['endTime'] = activity.end_time.timestamp()
+            item['startTime'] = int(activity.start_time.timestamp())
+            item['endTime'] = int(activity.end_time.timestamp())
             item['place'] = activity.place
-            item['bookStart'] = activity.book_start.timestamp()
-            item['bookEnd'] = activity.book_end.timestamp()
+            item['bookStart'] = int(activity.book_start.timestamp())
+            item['bookEnd'] = int(activity.book_end.timestamp())
             item['totalTickets'] = activity.total_tickets
             if activity.status == Activity.STATUS_PUBLISHED:
                 item['status'] = 1
@@ -154,7 +151,7 @@ class ActivityDetail(APIView):
                 item['status'] = 0
             item['picUrl'] = activity.pic_url
 
-            item['currentTime'] = datetime.datetime.now().timestamp()
+            item['currentTime'] = int(datetime.datetime.now().timestamp())
             item['bookedTickets'] = activity.total_tickets - activity.remain_tickets
             item['usedTickets'] = Ticket.objects.filter(activity_id=activity.id, status=Ticket.STATUS_USED).count()
             return item
@@ -173,38 +170,25 @@ class ActivityDetail(APIView):
                 activity.place = self.input['place']
             activity.description = self.input['description']
             activity.pic_url = self.input['picUrl']
+            current_time = datetime.datetime.now().timestamp()
 
-            start_Time = self.input['startTime'].timestamp()
-            end_Time = self.input['endTime'].timestamp()
-            book_Start = self.input['bookStart'].timestamp()
-            book_End = self.input['bookEnd'].timestamp()
-            current_Time = datetime.datetime.now().timestamp()
-            # use xxxx_Xxxx to compare time
-            if start_Time >= end_Time:
-                raise LogicError('Activity end time should be later than activity start time.')
-            if book_Start >= book_End:
-                raise LogicError('Book end time should be later than book start time.')
-            if book_End >= end_Time:
-                raise LogicError('Activity end time should be later than book end time.')
-            if current_Time > end_Time and activity.start_time != self.input['startTime']:
-                raise LogicError('Activity start time can not be changed after the activity ends.')
-            if current_Time > end_Time and activity.end_time != self.input['endTime']:
-                raise LogicError('Activity end time can not be changed after the activity ends.')
-            if activity.status is Activity.STATUS_PUBLISHED and activity.book_start != self.input['bookStart']:
-                raise LogicError('Book start time can not be changed after the activity publishes.')
-            if current_Time > start_Time and activity.book_end != self.input['bookEnd']:
-                raise LogicError('Book end time can not be changed after the activity starts.')
-            if current_Time > book_Start and activity.total_tickets != self.input['totalTickets']:
-                raise LogicError('Total tickets can not be changed after the book starts.')
-            if activity.status is Activity.STATUS_PUBLISHED and activity.status != self.input['status']:
-                raise LogicError('Activity status can not be changed after the activity publishes.')
-            
-            activity.start_time = self.input['startTime']
-            activity.end_time = self.input['endTime']
-            activity.book_start = self.input['bookStart']
-            activity.book_end = self.input['bookEnd']
-            activity.total_tickets = self.input['totalTickets']
-            activity.status = self.input['status']
+            # 这一段的顺序比较重要，牵涉到数据库date对象和str对象的转换
+
+            if current_time < activity.start_time.timestamp():
+                activity.book_end = self.input['bookEnd']
+
+            if current_time < activity.end_time.timestamp():
+                activity.start_time = self.input['startTime']
+                activity.end_time = self.input['endTime']
+
+            if current_time < activity.book_start.timestamp():
+                activity.total_tickets = self.input['totalTickets']
+
+            if activity.status is not Activity.STATUS_SAVED:
+                activity.book_start = self.input['bookStart']
+
+            if activity.status is not Activity.STATUS_PUBLISHED:
+                activity.status = self.input['status']
             activity.save()
         except Exception as e:
             raise MySQLError('Change activity detail failed!')
