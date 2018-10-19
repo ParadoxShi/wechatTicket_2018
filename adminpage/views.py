@@ -84,13 +84,8 @@ class ActivityDelete(APIView):
         self.check_input('id')
         try:
             activity_to_be_deleted = Activity.objects.get(id=self.input['id'])
-            tickets_to_be_cancelled = Ticket.objects.filter(activity=activity_to_be_deleted)
             activity_to_be_deleted.status = Activity.STATUS_DELETED
             activity_to_be_deleted.save()
-            for ticket in tickets_to_be_cancelled:
-                ticket.status = Ticket.STATUS_CANCELLED
-                ticket.save()
-        except Activity.DoesNotExist:
             raise ValidateError('The activity to be deleted does not exist.')
 
 
