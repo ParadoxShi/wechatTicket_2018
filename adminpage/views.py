@@ -236,7 +236,7 @@ class ActivityDetail(APIView):
                 raise LogicError('Book end time can not be changed after the activity starts.')
             if current_Time > book_Start and activity.total_tickets != self.input['totalTickets']:
                 raise LogicError('Total tickets can not be changed after the book starts.')
-            if activity.status is Activity.STATUS_PUBLISHED and activity.status != self.input['status']
+            if activity.status is Activity.STATUS_PUBLISHED and activity.status != self.input['status']:
                 raise LogicError('Activity status can not be changed after the activity publishes.')
             
             activity.start_time = self.input['startTime']
@@ -337,7 +337,7 @@ class Checkin(APIView):
                     # use xxxx_Xxxx to compare time
                     if current_Time < start_Time:
                         raise CheckinError('The activity has not started.')
-                    if current_Time > end_Time：
+                    if current_Time > end_Time:
                         raise CheckinError('The activity has already ended.')
 
                     ticket.status = Ticket.STATUS_USED
@@ -365,7 +365,7 @@ class Checkin(APIView):
                             # use xxxx_Xxxx to compare time
                             if current_Time < start_Time:
                                 raise CheckinError('The activity has not started.')
-                            if current_Time > end_Time：
+                            if current_Time > end_Time:
                                 raise CheckinError('The activity has already ended.')
 
                             ticket.status = Ticket.STATUS_USED
