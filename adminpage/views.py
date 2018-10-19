@@ -321,7 +321,8 @@ class Checkin(APIView):
         try:
             if 'ticket' in self.input:
                 ticket = Ticket.get_by_id(unique_id=self.input['ticket'])
-                if str(ticket.status) == Ticket.STATUS_VALID:            
+                if str(ticket.status) == Ticket.STATUS_VALID:
+                    """            
                     start_Time = ticket.activity.start_time.timestamp()
                     end_Time = ticket.activity.end_time.timestamp()
                     current_Time = datetime.datetime.now().timestamp()
@@ -330,6 +331,8 @@ class Checkin(APIView):
                         raise CheckinError('The activity has not started.')
                     if current_Time > end_Time:
                         raise CheckinError('The activity has already ended.')
+                    """
+                    # 前端已经实现了这部分判定
 
                     ticket.status = Ticket.STATUS_USED
                     ticket.save()
