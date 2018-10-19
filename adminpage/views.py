@@ -176,30 +176,30 @@ class ActivityDetail(APIView):
         except Exception as e:
             raise MySQLError('Change activity detail failed!')
 
-        start_Time = activity.start_time.timestamp()
-        end_Time = activity.end_time.timestamp()
-        book_Start = activity.book_start.timestamp()
-        book_End = activity.book_end.timestamp()
+        start_Time = self.input['startTime']
+        end_Time = self.input['endTime']
+        book_Start = self.input['bookStart']
+        book_End = self.input['bookEnd']
         current_Time = datetime.datetime.now().timestamp()
         # use xxxx_Xxxx to compare time
         if start_Time >= end_Time:
-            raise LogicError1('Activity end time should be later than activity start time.')
+            raise LogicError('Activity end time should be later than activity start time.')
         if book_Start >= book_End:
-            raise LogicError2('Book end time should be later than book start time.')
+            raise LogicError('Book end time should be later than book start time.')
         if book_End >= end_Time:
-            raise LogicError3('Activity end time should be later than book end time.')
+            raise LogicError('Activity end time should be later than book end time.')
         if current_Time > end_Time and activity.start_time != self.input['startTime']:
-            raise LogicError4('Activity start time can not be changed after the activity ends.')
+            raise LogicError('Activity start time can not be changed after the activity ends.')
         if current_Time > end_Time and activity.end_time != self.input['endTime']:
-            raise LogicError5('Activity end time can not be changed after the activity ends.')
+            raise LogicError('Activity end time can not be changed after the activity ends.')
         if activity.status is Activity.STATUS_PUBLISHED and activity.book_start != self.input['bookStart']:
-            raise LogicError6('Book start time can not be changed after the activity publishes.')
+            raise LogicError('Book start time can not be changed after the activity publishes.')
         if current_Time > start_Time and activity.book_end != self.input['bookEnd']:
-            raise LogicError7('Book end time can not be changed after the activity starts.')
+            raise LogicError('Book end time can not be changed after the activity starts.')
         if current_Time > book_Start and activity.total_tickets != self.input['totalTickets']:
-            raise LogicError8('Total tickets can not be changed after the book starts.')
+            raise LogicError('Total tickets can not be changed after the book starts.')
         if activity.status is Activity.STATUS_PUBLISHED and activity.status != self.input['status']:
-            raise LogicError9('Activity status can not be changed after the activity publishes.')
+            raise LogicError('Activity status can not be changed after the activity publishes.')
 
         try:    
             activity.start_time = self.input['startTime']
