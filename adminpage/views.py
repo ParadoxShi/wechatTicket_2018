@@ -192,9 +192,9 @@ class ActivityDetail(APIView):
             activity.book_end = self.input['bookEnd']
 
         if current_Time > book_Start and activity.total_tickets != self.input['totalTickets']:
-            raise LogicError('Total tickets can not be changed after the book starts.')
+            raise LogicError1('Total tickets can not be changed after the book starts.')
         if activity.status == Activity.STATUS_PUBLISHED and activity.status != self.input['status']:
-            raise LogicError('Activity status can not be changed after the activity publishes.')
+            raise LogicError2('Activity status can not be changed after the activity publishes.')
 
         try:
             activity.total_tickets = self.input['totalTickets']
