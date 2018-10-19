@@ -20,10 +20,16 @@ sys_superuser = {
 superUserForTest = {'username': 'administrator',
                     'email': 'benjo@youknowthereisnotthiswebsite.com',
                     'password': 'guest2000'}
-wrongUser1 = superUserForTest
-wrongUser1['username'] = 'bdripistraitor'
-wrongUser2 = superUserForTest
-wrongUser2['password'] = 'prisoner9527'
+wrongUser1 = {
+    'username': 'bdripistraitor',
+    'email': 'benjo@youknowthereisnotthiswebsite.com',
+    'password': 'guest2000'
+}
+wrongUser2 = {
+    'username': 'administrator',
+    'email': 'benjo@youknowthereisnotthiswebsite.com',
+    'password': 'prisoner9527'
+}
 
 
 ## API 4 ##
@@ -73,12 +79,12 @@ class LogOutTest(TestCase):
 
     def test_log_out(self):
         self.client.post('/api/a/login/', superUserForTest)
-        rep = self.client.post('/api/a/logout/')
+        rep = self.client.post('/api/a/logout/', superUserForTest)
         repObj = json.loads(rep.content.decode('utf-8'))
         self.assertEqual(repObj['code'], 0)
 
     def test_failed_not_logged_in(self):
-        rep = self.client.post('/api/a/logout/')
+        rep = self.client.post('/api/a/logout/', superUserForTest)
         repObj = json.loads(rep.content.decode('utf-8'))
         self.assertEqual(repObj['code'], 3)
 
@@ -202,7 +208,7 @@ class ActivityDeleteTest(TestCase):
 
     def test_del_activity(self):
         self.client.post('/api/a/login/', superUserForTest)
-        rep = self.client.get('/api/a/activity/delete/', {'id': act_saved['id']})
+        rep = self.client.post('/api/a/activity/delete/', {'id': act_saved['id']})
         repObj = json.loads(rep.content.decode('utf-8'))
         self.assertEqual(repObj['code'], 0)
 
