@@ -143,7 +143,7 @@ act_changed_detail = {
                "name": 'changed',
                "place": 'East Hall',
                "description": 'This is a new description.',
-               "total_tickets": 500,
+               "total_tickets": 1000,
                "status": Activity.STATUS_SAVED,
                "pic_url": "test_url",
                "start_time": timezone.now() + timedelta(1000),
