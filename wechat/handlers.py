@@ -155,11 +155,41 @@ class GetTicketHandler(WeChatHandler):
         if not self.user.student_id:
             return self.reply_text(self.get_message('bind_account'))
         tickets = []
-        thisUser = self.user
-        ticket_list = Ticket.get_by_studentId(student_id=thisUser.student_id)
+        this_user = self.user
+        ticket_list = Ticket.get_by_studentId(student_id=this_user.student_id)
+        if len(ticket_list) == 0:
+            return self.reply_text('您还没有订票')
         for ticket in ticket_list:
             tickets.append({
-                'Url': settings.get_url('/u/ticket', {'openid':thisUser.open_id, 'ticket':ticket.unique_id}),
+                'Url': settings.get_url('/u/ticket', {'openid':this_user.open_id, 'ticket':ticket.unique_id}),
+                'Title': '%s' % ticket.activity.name,
+                'Description': ticket.activity.description,
+                'PicUrl': ticket.activity.pic_url
+            })
+        return self.reply_news(articles=tickets)
+
+
+class TakeTicketHandler(WeChatHandler):
+    def check(self):
+        return self.is_text_command('取票')
+    
+    def handle(self):
+        if not self.user.student_id:
+            return self.reply_text(self.get_message('bind_account'))
+        this_user = self.user
+        activity_key = self.input['Content'][3:]
+        owned_tickets = Ticket.objects.filter(student_id=this_user.student_id, activity__key=activity_key)
+        if len(owned_tickets) == 0:
+            return self.reply_text('您还没有订票')
+
+        ticket = owned_tickets[0]
+        if ticket.status == Ticket.STATUS_CANCELLED:
+            return self.reply_text('您已把这张票退了')
+
+        tickets = []
+        for ticket in owned_tickets:
+            tickets.append({
+                'Url': settings.get_url('/u/ticket', {'openid':this_user.open_id, 'ticket':ticket.unique_id}),
                 'Title': '%s' % ticket.activity.name,
                 'Description': ticket.activity.description,
                 'PicUrl': ticket.activity.pic_url
@@ -175,9 +205,9 @@ class WithdrawTicketHandler(WeChatHandler):
     def handle(self):
         if not self.user.student_id:
             return self.reply_text(self.get_message('bind_account'))
-        thisUser = self.user
+        this_user = self.user
         activity_key = self.input['Content'][3:]
-        owned_tickets = Ticket.objects.filter(student_id=thisUser.student_id, activity__key=activity_key)
+        owned_tickets = Ticket.objects.filter(student_id=this_user.student_id, activity__key=activity_key)
         if len(owned_tickets) == 0:
             return self.reply_text('您还没有订票')
 
