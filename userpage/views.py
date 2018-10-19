@@ -29,10 +29,7 @@ class UserBind(APIView):
         return User.get_by_openid(self.input['openid']).student_id
 
     def post(self):
-<<<<<<< HEAD
-=======
         print("bind-post")
->>>>>>> zy_trial-for-api-changes
         self.check_input('openid', 'student_id', 'password')
         user = User.get_by_openid(self.input['openid'])
         self.validate_user()
