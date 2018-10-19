@@ -215,3 +215,111 @@ class ActivityDeleteTest(TestCase):
     def tearDown(self):
         pass
 
+
+class CreateActivityTest(TestCase):
+    """
+    Test For API 8
+    """
+    def setUp(self):
+        djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'], sys_superuser['password'])
+        self.cl = Client()
+        self.cl.post('/api/a/login', sys_superuser)
+
+    def tearDown(self):
+        Activity.objects.all().delete()
+        self.cl.post('/api/a/logout', sys_superuser)
+
+    def test_createPublishedActivity(self):
+        res = self.cl.post('/api/a/activity/create', activity_liquid(act_published))
+        res_content = res.content.decode('utf-8')
+        self.assertEqual(json.loads(res_content)['code'], 0)
+
+    def test_createSavedActivity(self):
+        res = self.cl.post('/api/a/activity/create', activity_liquid(act_saved))
+        res_content = res.content.decode('utf-8')
+        self.assertEqual(json.loads(res_content)['code'], 0)
+
+
+class UploadImageTest(TestCase):
+    """
+    Test For API 9
+    """
+    def setUp(self):
+        djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'], sys_superuser['password'])
+        self.cl = Client()
+        self.cl.post('/api/a/login', sys_superuser)
+
+    def tearDown(self):
+        self.cl.post('/api/a/logout', sys_superuser)
+
+    def test_upload_image(self):
+        path = os.path.join(settings.BASE_DIR, 'static/夜明けより前の君へ.jpg')
+        with open(path, 'rb') as img:
+            res = self.cl.post('/api/a/image/upload', {'image': img})
+        res_content = res.content.decode('utf-8')
+        self.assertEqual(json.loads(res_content)['code'], 0)
+
+
+class ActivityDetailTest(TestCase):
+    """
+    Test For API 10
+    """
+    def setUp(self):
+        djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'],sys_superuser['password'])
+        self.cl = Client()
+        self.cl.post('/api/a/login', sys_superuser)
+        Activity(**act_saved).save()
+
+    def tearDown(self):
+        Activity.objects.all().delete()
+        self.cl.post('/api/a/logout', sys_superuser)
+
+    def test_getDetail(self):
+        res = self.cl.get('/api/a/activity/detail', {'id': act_saved['id']})
+        res_content = res.content.decode('utf-8')
+        self.assertEqual(json.loads(res_content)['code'], 0)
+
+    def test_postDetail(self):
+        copy_act = act_saved.copy()
+        copy_act.update(act_changed_detail)
+        # copy_act.pop('key')
+        # copy_act.pop('remainTickets')
+        res = self.cl.post('/api/a/activity/detail', activity_liquid(copy_act))
+        res_content = res.content.decode('utf-8')
+        self.assertEqual(json.loads(res_content)['code'], 0)
+
+
+"""
+class MenuTest(TestCase):
+    '''
+    Test for API 11
+    This is not available on travisCI
+    Due to access_token error
+    '''
+    def setUp(self):
+        djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'], sys_superuser['password'])
+        self.cl = Client()
+        self.cl.post('/api/a/login', sys_superuser)
+        Activity(**act_saved).save()
+        Activity(**act_published).save()
+        Activity(**act_deleted).save()
+
+    def tearDown(self):
+        self.cl.post('/api/a/logout', sys_superuser)
+        Activity.objects.all().delete()
+
+    def test_getMenu(self):
+        res = self.cl.get('/api/a/activity/menu')
+        res_content = res.content.decode('utf-8')
+        self.assertEqual(json.loads(res_content)['code'], 0)
+
+    def test_addToMenu(self):
+        res = self.cl.post('/api/a/activity/menu', {'activity_ids': [act_saved['id'], act_published['id']]})
+        res_content = res.content.decode('utf-8')
+        self.assertEqual(json.loads(res_content)['code'], 0)
+
+    def test_deleteInMenu(self):
+        res = self.cl.post('/api/a/activity/menu', {'activity_ids': []})
+        res_content = res.content.decode('utf-8')
+        self.assertEqual(json.loads(res_content)['code'], 0)
+"""
