@@ -103,15 +103,11 @@ class ActivityCreate(APIView):
         if not self.request.user.is_authenticated():
             raise ValidateError('You need to login first.')
         self.check_input('name', 'key', 'place', 'description', 'picUrl', 'startTime', 'endTime', 'bookStart', 'bookEnd', 'totalTickets', 'status')
-        
-        start_Time = self.input['startTime']
-        end_Time = self.input['endTime']
-        book_Start = self.input['bookStart']
-        book_End = self.input['bookEnd']
-        start_Time.timestamp()
-        end_Time.timestamp()
-        book_Start.timestamp()
-        book_End.timestamp()
+        """
+        start_Time = self.input['startTime'].timestamp()
+        end_Time = self.input['endTime'].timestamp()
+        book_Start = self.input['bookStart'].timestamp()
+        book_End = self.input['bookEnd'].timestamp()
         # use xxxx_Xxxx to compare time
         if start_Time >= end_Time:
             raise LogicError('Activity end time should be later than activity start time.')
@@ -119,7 +115,8 @@ class ActivityCreate(APIView):
             raise LogicError('Book end time should be later than book start time.')
         if book_End >= end_Time:
             raise LogicError('Activity end time should be later than book end time.')
-
+        """
+        # 前端已经实现了这部分判定
         try:
             item = Activity.objects.create(name=self.input['name'],
                                            key=self.input['key'],
@@ -210,14 +207,10 @@ class ActivityDetail(APIView):
             activity.description = self.input['description']
             activity.pic_url = self.input['picUrl']
 
-            start_Time = self.input['startTime']
-            end_Time = self.input['endTime']
-            book_Start = self.input['bookStart']
-            book_End = self.input['bookEnd']
-            start_Time.timestamp()
-            end_Time.timestamp()
-            book_Start.timestamp()
-            book_End.timestamp()
+            start_Time = self.input['startTime'].timestamp()
+            end_Time = self.input['endTime'].timestamp()
+            book_Start = self.input['bookStart'].timestamp()
+            book_End = self.input['bookEnd'].timestamp()
             current_Time = datetime.datetime.now().timestamp()
             # use xxxx_Xxxx to compare time
             if start_Time >= end_Time:
@@ -329,10 +322,8 @@ class Checkin(APIView):
             if 'ticket' in self.input:
                 ticket = Ticket.get_by_id(unique_id=self.input['ticket'])
                 if str(ticket.status) == Ticket.STATUS_VALID:            
-                    start_Time = ticket.activity.start_time
-                    end_Time = ticket.activity.end_time
-                    start_Time.timestamp()
-                    end_Time.timestamp()
+                    start_Time = ticket.activity.start_time.timestamp()
+                    end_Time = ticket.activity.end_time.timestamp()
                     current_Time = datetime.datetime.now().timestamp()
                     # use xxxx_Xxxx to compare time
                     if current_Time < start_Time:
