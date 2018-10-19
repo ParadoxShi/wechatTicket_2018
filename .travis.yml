@@ -9,5 +9,6 @@ before_install:
     - mv configs.example.json configs.json
 install:
     - pip install -r requirements.txt
+    - mkdir /home/travis/build/ParadoxShi/wechatTicket_2018/static/img/Upload
 script:
     - python manage.py test

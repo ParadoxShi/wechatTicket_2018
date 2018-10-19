@@ -124,7 +124,7 @@ class ActivityDetailTest(TestCase):
         djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'],sys_superuser['password'])
         self.cl = Client()
         self.cl.post('/api/a/login', sys_superuser)
-        Activity(act_saved).save()
+        Activity(**act_saved).save()
 
     def tearDown(self):
         Activity.objects.all().delete()
@@ -170,9 +170,9 @@ class MenuTest(TestCase):
         djangoUser.objects.create_superuser(sys_superuser['username'], sys_superuser['email'], sys_superuser['password'])
         self.cl = Client()
         self.cl.post('/api/a/login', sys_superuser)
-        Activity(act_saved).save()
-        Activity(act_published).save()
-        Activity(act_deleted).save()
+        Activity(**act_saved).save()
+        Activity(**act_published).save()
+        Activity(**act_deleted).save()
 
     def tearDown(self):
         self.cl.post('/api/a/logout', sys_superuser)
