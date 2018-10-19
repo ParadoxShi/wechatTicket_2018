@@ -182,18 +182,17 @@ class ActivityDetail(APIView):
         book_End = activity.book_end.timestamp()
         current_Time = datetime.datetime.now().timestamp()
         # use xxxx_Xxxx to compare time
-        if current_Time > end_Time:
+        if current_Time < end_Time:
             activity.start_time = self.input['startTime']
-        if current_Time > end_Time:
             activity.end_time = self.input['endTime']
-        if activity.status == Activity.STATUS_PUBLISHED:
+        if activity.status != Activity.STATUS_PUBLISHED:
             activity.book_start = self.input['bookStart']
-        if current_Time > start_Time:
+        if current_Time < start_Time:
             activity.book_end = self.input['bookEnd']
-        if current_Time > book_Start:
+        if current_Time < book_Start:
             activity.total_tickets = self.input['totalTickets']
-        if activity.status == Activity.STATUS_PUBLISHED:
-            activity.status != self.input['status']
+        if activity.status != Activity.STATUS_PUBLISHED:
+            activity.status = self.input['status']
 
         try:
             activity.save()
