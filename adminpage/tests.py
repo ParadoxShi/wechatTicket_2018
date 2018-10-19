@@ -169,15 +169,17 @@ class ActivityDetailTest(TestCase):
             "name": item.name,
             "place": item.place,
             "description": item.description,
-            "startTime": item.start_time,
-            "endTime": item.end_time,
-            "bookStart": item.book_start,
-            "bookEnd": item.book_end,
-            "totalTickets": item.total_tickets,
+            "start_time": item.start_time,
+            "end_time": item.end_time,
+            "book_start": item.book_start,
+            "book_end": item.book_end,
+            "total_tickets": item.total_tickets,
             "status": item.status,
-            "picUrl": item.pic_url,
-            "remianTickets": item.remain_tickets
+            "pic_url": item.pic_url,
+            "remain_tickets": item.remain_tickets
         }
+        print(copy_act)
+        print(item_to_dict)
         self.assertDictEqual(copy_act, item_to_dict)
 
 
