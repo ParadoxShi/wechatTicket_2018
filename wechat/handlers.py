@@ -138,3 +138,81 @@ class BookEmptyHandler(WeChatHandler):
 
     def handle(self):
         return self.reply_text(self.get_message('book_empty'))
+
+
+class GetTicketHandler(WeChatHandler):
+    def check(self):
+        return self.is_text('查票') or self.is_event_click(self.view.event_keys['get_ticket'])
+
+    def handle(self):
+        if not self.user.student_id:
+            return self.reply_text(self.get_message('bind_account'))
+        tickets = []
+        this_user = self.user
+        ticket_list = Ticket.get_by_studentId(student_id=this_user.student_id)
+        if len(ticket_list) == 0:
+            return self.reply_text('您还没有订票')
+        for ticket in ticket_list:
+            tickets.append({
+                'Url': settings.get_url('/u/ticket', {'openid': this_user.open_id, 'ticket': ticket.unique_id}),
+                'Title': '%s' % ticket.activity.name,
+                'Description': ticket.activity.description,
+                'PicUrl': ticket.activity.pic_url
+            })
+        return self.reply_news(articles=tickets)
+
+
+class TakeTicketHandler(WeChatHandler):
+    def check(self):
+        return self.is_text_command('取票')
+
+    def handle(self):
+        if not self.user.student_id:
+            return self.reply_text(self.get_message('bind_account'))
+        this_user = self.user
+        activity_key = self.input['Content'][3:]
+        owned_tickets = Ticket.objects.filter(student_id=this_user.student_id, activity__key=activity_key)
+        if len(owned_tickets) == 0:
+            return self.reply_text('您还没有订票')
+
+        ticket = owned_tickets[0]
+        if ticket.status == Ticket.STATUS_CANCELLED:
+            return self.reply_text('您已把这张票退了')
+
+        tickets = []
+        for ticket in owned_tickets:
+            tickets.append({
+                'Url': settings.get_url('/u/ticket', {'openid': this_user.open_id, 'ticket': ticket.unique_id}),
+                'Title': '%s' % ticket.activity.name,
+                'Description': ticket.activity.description,
+                'PicUrl': ticket.activity.pic_url
+            })
+        return self.reply_news(articles=tickets)
+
+
+class WithdrawTicketHandler(WeChatHandler):
+    def check(self):
+        return self.is_text_command('退票')
+
+    def handle(self):
+        if not self.user.student_id:
+            return self.reply_text(self.get_message('bind_account'))
+        this_user = self.user
+        activity_key = self.input['Content'][3:]
+        owned_tickets = Ticket.objects.filter(student_id=this_user.student_id, activity__key=activity_key)
+        if len(owned_tickets) == 0:
+            return self.reply_text('您还没有订票')
+
+        ticket = owned_tickets[0]
+        if ticket.status == Ticket.STATUS_CANCELLED:
+            return self.reply_text('您已退过票了')
+
+        if ticket.status == Ticket.STATUS_USED:
+            return self.reply_text('您已检票了')
+
+        activities = Activity.objects.filter(key=activity_key)
+        ticket.status = Ticket.STATUS_CANCELLED
+        ticket.save()
+        activities[0].remain_tickets += 1
+        activities[0].save()
+        return self.reply_text('退票成功')
