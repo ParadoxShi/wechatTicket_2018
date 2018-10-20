@@ -3,6 +3,7 @@
 from wechat.wrapper import WeChatHandler
 from wechat.models import Activity, Ticket
 from WeChatTicket import settings
+from django.db import transaction
 import time
 import uuid
 
@@ -110,12 +111,12 @@ class BookTicketHandler(WeChatHandler):
             activity_id = self.input['EventKey'][len(self.view.event_keys['book_header']):]
             activity = Activity.objects.get(id=activity_id)
             activity_key = activity.key
-        startTime = int(time.mktime(activity.book_start.timetuple()))
-        endTime = int(time.mktime(activity.book_end.timetuple()))
-        currentTime = int(time.time())
 
         if activity is None:
             return self.reply_text('没有记录！')
+        startTime = int(time.mktime(activity.book_start.timetuple()))
+        endTime = int(time.mktime(activity.book_end.timetuple()))
+        currentTime = int(time.time())
         if currentTime < startTime:
             return self.reply_text('抢票尚未开始！')
         if currentTime > endTime:
@@ -126,15 +127,20 @@ class BookTicketHandler(WeChatHandler):
             for ticket in owned_tickets:
                 if ticket.status != Ticket.STATUS_CANCELLED:
                     return self.reply_text('您已经订过票了！')
-            Ticket.objects.create(
-                student_id=self.user.student_id,
-                unique_id=self.createUID(openid=self.user.open_id),
-                activity=activity,
-                status=Ticket.STATUS_VALID
-            )
-            activity.remain_tickets -= 1
-            activity.save()
-            return self.reply_text('成功！')
+            with transaction.atomic():
+                try:
+                    Ticket.objects.create(
+                        student_id=self.user.student_id,
+                        unique_id=self.createUID(openid=self.user.open_id),
+                        activity=activity,
+                        status=Ticket.STATUS_VALID
+                    )
+                    activity.remain_tickets -= 1
+                    activity.save()
+                    return self.reply_text('成功！')
+                except Exception as e:
+                    return self.reply_text('失败！')
+
         else:
             return self.reply_text('票已抢完！')
 
@@ -210,17 +216,18 @@ class WithdrawTicketHandler(WeChatHandler):
         owned_tickets = Ticket.objects.filter(student_id=this_user.student_id, activity__key=activity_key)
         if len(owned_tickets) == 0:
             return self.reply_text('您还没有订票！')
+        for ticket in owned_tickets:
+            if ticket.status == Ticket.STATUS_USED:
+                return self.reply_text('您已检票了！')
+            elif ticket.status == Ticket.STATUS_VALID:
+                try:
+                    activities = Activity.objects.get(key=activity_key)
+                    ticket.status = Ticket.STATUS_CANCELLED
+                    ticket.save()
+                    activities.remain_tickets += 1
+                    activities.save()
+                    return self.reply_text('退票成功！')
+                except Exception as e:
+                    return self.reply_text('失败，请重试！')
 
-        ticket = owned_tickets[0]
-        if ticket.status == Ticket.STATUS_CANCELLED:
-            return self.reply_text('您已退过票了！')
-
-        if ticket.status == Ticket.STATUS_USED:
-            return self.reply_text('您已检票了！')
-
-        activities = Activity.objects.get(key=activity_key)
-        ticket.status = Ticket.STATUS_CANCELLED
-        ticket.save()
-        activities.remain_tickets += 1
-        activities.save()
-        return self.reply_text('退票成功！')
+        return self.reply_text('您已退过票了！')
