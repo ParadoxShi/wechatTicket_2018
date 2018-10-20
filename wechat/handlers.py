@@ -123,8 +123,9 @@ class BookTicketHandler(WeChatHandler):
         remain_count = activity.remain_tickets
         if remain_count > 0:
             owned_tickets = Ticket.objects.filter(student_id=self.user.student_id, activity__key=activity_key)
-            if len(owned_tickets) > 0:
-                return self.reply_text('您已经订过票了！')
+            for ticket in owned_tickets:
+                if ticket.status != Ticket.STATUS_CANCELLED:
+                    return self.reply_text('您已经订过票了！')
             Ticket.objects.create(
                 student_id=self.user.student_id,
                 unique_id=self.createUID(openid=self.user.open_id),
