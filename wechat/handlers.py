@@ -3,7 +3,7 @@
 from wechat.wrapper import WeChatHandler
 from wechat.models import Activity, Ticket
 from WeChatTicket import settings
-import random
+import time
 import uuid
 
 
@@ -102,33 +102,40 @@ class BookTicketHandler(WeChatHandler):
     def handle(self):
         if not self.user.student_id:
             return self.reply_text(self.get_message('bind_account'))
-        activity_list = []
+        activity = None
         if self.entry_type == 1:
             activity_key = self.input['Content'][3:]
-            activity_list = Activity.objects.filter(key=activity_key)
+            activity = Activity.objects.get(key=activity_key)
         elif self.entry_type == 2:
             activity_id = self.input['EventKey'][len(self.view.event_keys['book_header']):]
-            activity_list = Activity.objects.filter(id=activity_id)
-            activity_key = activity_list[0].key
+            activity = Activity.objects.get(id=activity_id)
+            activity_key = activity.key
+        startTime = int(time.mktime(activity.book_start.timetuple()))
+        endTime = int(time.mktime(activity.book_end.timetuple()))
+        currentTime = int(time.time())
 
-        if len(activity_list) == 0:
+        if activity is None:
             return self.reply_text('没有记录！')
-        remain_count = activity_list[0].remain_tickets
+        if currentTime < startTime:
+            return self.reply_text('抢票尚未开始！')
+        if currentTime > endTime:
+            return self.reply_text('抢票已经结束！')
+        remain_count = activity.remain_tickets
         if remain_count > 0:
             owned_tickets = Ticket.objects.filter(student_id=self.user.student_id, activity__key=activity_key)
             if len(owned_tickets) > 0:
-                return self.reply_text('您已经订过票了。')
+                return self.reply_text('您已经订过票了！')
             Ticket.objects.create(
                 student_id=self.user.student_id,
                 unique_id=self.createUID(openid=self.user.open_id),
-                activity=activity_list[0],
+                activity=activity,
                 status=Ticket.STATUS_VALID
             )
-            activity_list[0].remain_tickets -= 1
-            activity_list[0].save()
+            activity.remain_tickets -= 1
+            activity.save()
             return self.reply_text('成功！')
         else:
-            return self.reply_text('票已抢完。')
+            return self.reply_text('票已抢完！')
 
 
 class BookEmptyHandler(WeChatHandler):
@@ -151,7 +158,7 @@ class GetTicketHandler(WeChatHandler):
         this_user = self.user
         ticket_list = Ticket.get_by_studentId(student_id=this_user.student_id)
         if len(ticket_list) == 0:
-            return self.reply_text('您还没有订票')
+            return self.reply_text('您还没有订票！')
         for ticket in ticket_list:
             tickets.append({
                 'Url': settings.get_url('/u/ticket', {'openid': this_user.open_id, 'ticket': ticket.unique_id}),
@@ -173,11 +180,11 @@ class TakeTicketHandler(WeChatHandler):
         activity_key = self.input['Content'][3:]
         owned_tickets = Ticket.objects.filter(student_id=this_user.student_id, activity__key=activity_key)
         if len(owned_tickets) == 0:
-            return self.reply_text('您还没有订票')
+            return self.reply_text('您还没有订票！')
 
         ticket = owned_tickets[0]
         if ticket.status == Ticket.STATUS_CANCELLED:
-            return self.reply_text('您已把这张票退了')
+            return self.reply_text('您已把这张票退了！')
 
         tickets = []
         for ticket in owned_tickets:
@@ -201,18 +208,18 @@ class WithdrawTicketHandler(WeChatHandler):
         activity_key = self.input['Content'][3:]
         owned_tickets = Ticket.objects.filter(student_id=this_user.student_id, activity__key=activity_key)
         if len(owned_tickets) == 0:
-            return self.reply_text('您还没有订票')
+            return self.reply_text('您还没有订票！')
 
         ticket = owned_tickets[0]
         if ticket.status == Ticket.STATUS_CANCELLED:
-            return self.reply_text('您已退过票了')
+            return self.reply_text('您已退过票了！')
 
         if ticket.status == Ticket.STATUS_USED:
-            return self.reply_text('您已检票了')
+            return self.reply_text('您已检票了！')
 
-        activities = Activity.objects.filter(key=activity_key)
+        activities = Activity.objects.get(key=activity_key)
         ticket.status = Ticket.STATUS_CANCELLED
         ticket.save()
-        activities[0].remain_tickets += 1
-        activities[0].save()
-        return self.reply_text('退票成功')
+        activities.remain_tickets += 1
+        activities.save()
+        return self.reply_text('退票成功！')
