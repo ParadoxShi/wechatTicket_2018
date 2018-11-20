@@ -105,7 +105,6 @@ class BookTicketHandler(WeChatHandler):
         entry_type = self.entry_type
         self_input = self.input
 
-
         if entry_type == 1:
             activity_key = self_input['Content'][3:]
             activity_list = Activity.objects.filter(key=activity_key)
